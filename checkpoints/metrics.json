@@ -1,0 +1,64 @@
+{
+  "exp_name": "benchmark",
+  "total_params": 5290496,
+  "best_val_loss": 21.902,
+  "best_val_ppl": 485165195.41,
+  "phase1_steps": 40,
+  "architecture": {
+    "vocab_size": 1837,
+    "dim": 256,
+    "n_layers": 6,
+    "n_heads": 4,
+    "max_seq_len": 256,
+    "dropout": 0.0
+  },
+  "training_config": {
+    "optimizer": "adamw",
+    "weight_decay": 0.01,
+    "max_iters": 50,
+    "batch_size": 16,
+    "seq_len": 64,
+    "lr": 0.001
+  },
+  "history": [
+    {
+      "step": 25,
+      "phase": "Phase 1 (Foundation)",
+      "train_loss": 57.4504,
+      "val_loss": 57.0943,
+      "train_ppl": 485165195.41,
+      "val_ppl": 485165195.41,
+      "lr": 0.00025,
+      "grad_norm": 54.158,
+      "update_ratio": 0.003615,
+      "tokens_per_sec": 4649.6,
+      "step_time_ms": 220.24
+    },
+    {
+      "step": 40,
+      "phase": "Phase 1 (Foundation)",
+      "train_loss": 24.8946,
+      "val_loss": 24.9147,
+      "train_ppl": 485165195.41,
+      "val_ppl": 485165195.41,
+      "lr": 0.0004,
+      "grad_norm": 18.534,
+      "update_ratio": 0.003315,
+      "tokens_per_sec": 2639.4,
+      "step_time_ms": 387.97
+    },
+    {
+      "step": 50,
+      "phase": "Phase 2 (Annealing)",
+      "train_loss": 22.0135,
+      "val_loss": 21.902,
+      "train_ppl": 485165195.41,
+      "val_ppl": 485165195.41,
+      "lr": 1e-05,
+      "grad_norm": 8.709,
+      "update_ratio": 9e-05,
+      "tokens_per_sec": 4858.9,
+      "step_time_ms": 210.75
+    }
+  ]
+}
