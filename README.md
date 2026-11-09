@@ -92,5 +92,3 @@ Benchmark gồm sáu model:
     ├── model.py                 # PyTorch Transformer (RMSNorm, RoPE, Attention, SwiGLU)
     └── dataset.py               # Memory-mapped DataLoader
 ```
-
-Xem kế hoạch chi tiết tại [`docs/roadmap.md`](docs/roadmap.md).
