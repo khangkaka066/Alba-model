@@ -1,94 +1,249 @@
-# LLM From Scratch — Alba-Model Project
+# 🌟 Alba-Model: Modern Decoder-Only LLM From Scratch
 
-Project này được tổ chức theo pipeline: dữ liệu → tokenizer tự viết (Byte-Level BPE) → decoder-only LLM (RMSNorm, RoPE, Attention, SwiGLU) tự train → scaling law → SFT/DPO/RLVR → structured decision benchmark → agent context dài → report/demo.
+<p align="center">
+  <img src="https://img.shields.io/badge/Architecture-Decoder--Only%20Transformer-blue?style=for-the-badge&logo=pytorch" alt="Architecture" />
+  <img src="https://img.shields.io/badge/Parameters-5.29M-green?style=for-the-badge" alt="Parameters" />
+  <img src="https://img.shields.io/badge/Tokenizer-Byte--Level%20BPE-orange?style=for-the-badge" alt="Tokenizer" />
+  <img src="https://img.shields.io/badge/Curriculum-Two--Stage%20Annealing-purple?style=for-the-badge" alt="Curriculum" />
+  <a href="https://colab.research.google.com/github/khangkaka066/Alba-model/blob/main/main.ipynb">
+    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" style="height: 28px;" />
+  </a>
+</p>
 
----
-
-## 🌟 Alba-Model: Triển khai Hiện tại (Executable Implementation)
-
-Hệ thống mã nguồn hoàn chỉnh đã được xây dựng và kiểm thử thành công:
-- **Kiến trúc:** Modern Decoder-Only Autoregressive Transformer (~5.29M parameters)
-- **Chuẩn thiết kế:** LLaMA 3 / Mistral (RMSNorm Pre-norm, Rotary Positional Embedding RoPE, Causal Attention với SDPA, SwiGLU FFN, Weight Tying)
-- **Tokenizer:** Canonical Byte-Level BPE (BBPE) với 1,837 tokens, bảo vệ thẻ `<think>`, tách riêng chữ số `0-9` để hỗ trợ tính toán và suy luận logic
-- **Chiến lược Huấn luyện 2 Giai đoạn (Two-Stage Curriculum):**
-  - **Phase 1 (Nền tảng - 80% số bước):** 45% Edu Text, 35% Python Code, 10% Math, 10% General Knowledge
-  - **Phase 2 (Annealing - 20% số bước):** 40% Deep Math & Logic, 40% Clean Code (docstring & typing), 20% Synthetic CoT kèm hạ nhiệt Learning Rate về $10^{-5}$
-- **Bảng điều khiển Colab:** [`main.ipynb`](main.ipynb) — điều khiển toàn bộ pipeline chỉ với 1 click.
-- **Hệ thống Đo lường Thí nghiệm:** Tự động ghi nhận Cross-Entropy Loss, Perplexity (PPL), Gradient Norm, Tốc độ (tokens/s), và Adam Update Ratio (`checkpoints/metrics.json`, `checkpoints/training_dashboard.png`).
-- **So sánh Mô hình:** Công cụ [`compare_models.py`](compare_models.py) để đối chiếu nhiều kiến trúc khi nghiên cứu.
-
-Chi tiết xem tại [`TRAINING_METHODOLOGY.md`](TRAINING_METHODOLOGY.md).
+**Alba-Model** is a lightweight, high-performance **Decoder-Only Language Model** (~5.29M parameters) engineered entirely from scratch in PyTorch. It incorporates the latest architectural advances found in modern frontier LLMs (Meta LLaMA 3, Mistral, and DeepSeek), featuring a **Byte-Level BPE tokenizer**, a **Two-Stage Pre-training Curriculum (with an Annealing Phase)**, and an in-depth **Adam/AdamW optimizer diagnostics suite**.
 
 ---
 
-## 🚀 Hướng dẫn Chạy nhanh
+## 📑 Table of Contents
 
-### 1. Chạy trên Google Colab
-Mở file [`main.ipynb`](main.ipynb) trên Google Colab, chọn **T4 GPU**, và bấm **Run All**.
-
-### 2. Chạy trên máy nội bộ (Local Mac / Linux / Windows)
-
-```bash
-# 1. Sinh dữ liệu 2 giai đoạn theo phương pháp
-python data/prepare_data.py
-
-# 2. Huấn luyện Byte-Level BPE Tokenizer
-python tokenizer/train_tokenizer.py
-
-# 3. Đóng gói dữ liệu sang tensor nhị phân (uint16)
-python data/process_data.py
-
-# 4. Huấn luyện mô hình (hỗ trợ AdamW và Adam)
-python train.py --exp_name alba_v1 --max_iters 2500 --batch_size 32 --seq_len 128 --lr 1e-3
-
-# 5. Thử nghiệm suy luận và giải toán
-python generate.py --prompt "Instruction: Solve the multi-step word problem with detailed logical chain of thought.\nQuestion: Alice has 35 apples. Alice gives 12 to Bob and buys 8 more. How many apples does Alice have now?\n<think>" --temperature 0.3
-
-# 6. So sánh các kiến trúc mô hình khác nhau
-python compare_models.py --files checkpoints/alba_v1_metrics.json checkpoints/other_metrics.json --output comparison.png
-```
+- [Architectural Highlights](#-architectural-highlights)
+- [Two-Stage Pre-training Curriculum](#-two-stage-pre-training-curriculum)
+- [Byte-Level BPE (BBPE) Tokenizer](#-byte-level-bpe-bbpe-tokenizer)
+- [Optimizer Diagnostics & Metrics](#-optimizer-diagnostics--metrics)
+- [Repository Structure](#-repository-structure)
+- [Quickstart Guide](#-quickstart-guide)
+  - [1-Click Google Colab](#1-run-on-google-colab-recommended)
+  - [Local Setup & Training](#2-run-locally-mac-gpu-mps--cuda--cpu)
+  - [Model Comparison Tool](#3-benchmarking--comparing-architectures)
+- [Methodology & Specifications](#-methodology--specifications)
 
 ---
 
-## 🎯 Mục tiêu học phần và mục tiêu nghiên cứu gốc
+## 🏗️ Architectural Highlights
 
-Mục tiêu bắt buộc là tự tay viết tokenizer và các thành phần LLM/Transformer, sau đó train một model decoder-only LFM-inspired khoảng 0.3B. Model này là trọng tâm để học data pipeline, pretraining, kernel, alignment và agent; không thay bằng checkpoint có sẵn.
-
-Trên model tự xây, dự án có thêm một nhánh nghiên cứu edge AI:
-
-> Can a 300M LFM-inspired model with parallel calibrated decision heads outperform LFM2-350M and Qwen3-0.6B autoregressive JSON generation in latency, structured-decision accuracy, and calibration for on-device tasks?
-
-Benchmark gồm sáu model:
-
-| Vai trò | Model |
-| --- | --- |
-| Proposed system | LFM-inspired 300M tự train + parallel `action`, `slot`, `confidence`, `abstain` heads |
-| AR baseline gần kiến trúc | LFM2-350M |
-| AR Transformer baseline | Qwen3-0.6B |
-| Small-model reference | SmolLM2-135M |
-| Small-model reference | MobileLLM-125M |
-| Small-model reference | Gemma 3 270M |
-
----
-
-## 📁 Cấu trúc thư mục
+Alba-Model abandons legacy Transformer constructs (e.g., standard LayerNorm, absolute positional embeddings, and vanilla MLPs) in favor of the modern open-weights consensus:
 
 ```text
-├── main.ipynb                   # Master Google Colab Dashboard
-├── TRAINING_METHODOLOGY.md      # Tài liệu chi tiết phương pháp & metrics
-├── train.py                     # Script huấn luyện 2 giai đoạn (AdamW/Adam, Cosine LR)
-├── generate.py                  # Script sinh chữ & giải toán CoT
-├── compare_models.py            # Công cụ đối chiếu & so sánh các kiến trúc
-├── data/
-│   ├── prepare_data.py          # Script sinh dữ liệu 2 giai đoạn
-│   ├── process_data.py          # Script đóng gói nhị phân uint16
-│   ├── raw/                     # File text thô
-│   └── processed/               # File nhị phân train.bin, val.bin
-├── tokenizer/
-│   ├── train_tokenizer.py       # Script huấn luyện Byte-Level BPE
-│   └── tokenizer.json           # File từ điển 1,837 tokens
-└── src/
-    ├── config.py                # Siêu tham số ModelArgs
-    ├── model.py                 # PyTorch Transformer (RMSNorm, RoPE, Attention, SwiGLU)
-    └── dataset.py               # Memory-mapped DataLoader
+                  Input Tokens [x_1, x_2, ..., x_T]
+                               │
+                               ▼
+               [Token Embeddings (d = 256)]
+                               │
+       ┌───────────────────────┴───────────────────────┐
+       │                                               ▼
+       │                                     RMSNorm(x)
+       │                                               ▼
+       │                             Query / Key / Value Projections
+       │                                               ▼
+       │                                Rotary Position Embedding (RoPE)
+       │                                               ▼
+       │                                Causal Multi-Head Self-Attention
+       │                                               ▼
+       │                                     Output Projection (W_o)
+       │                                               ▼
+       └──────────────────────────────►(+)◄────────────┘ (Residual Connection 1)
+                                        │
+                                        ▼
+                                        h
+                                        │
+       ┌────────────────────────────────┴──────────────┐
+       │                                               ▼
+       │                                     RMSNorm(h)
+       │                                               ▼
+       │                          SwiGLU FFN: W_2(SiLU(W_1 x) ⊙ W_3 x)
+       │                                               ▼
+       └──────────────────────────────►(+)◄────────────┘ (Residual Connection 2)
+                                        │
+                                        ▼  (Repeated across 6 Layers)
+                               Final RMSNorm
+                                        │
+                                        ▼
+                         Output Head (Weight-Tied Projection)
+                                        │
+                                        ▼
+                      Next-Token Logits [p(x_{t+1} | x_{<=t})]
 ```
+
+### Key Technical Innovations:
+1. **RMSNorm (Pre-normalization):** Eliminates the mean-computation step of LayerNorm, reducing compute overhead while stabilizing deep gradient propagation.
+2. **RoPE (Rotary Position Embedding):** Encodes positional distance via complex 2D rotation angles on Query and Key vectors ($e^{i m \theta}$), delivering superior relative-position awareness.
+3. **SwiGLU Activation:** Employs Gated Linear Units with the SiLU/Swish activation function, significantly boosting mathematical and algorithmic reasoning performance over ReLU/GELU.
+4. **Causal Scaled Dot-Product Attention (SDPA):** Hardware-accelerated causal attention (FlashAttention / Apple MPS compatible) preventing information leakage from future tokens.
+5. **Weight Tying:** Shares the embedding weight matrix with the final output projection head, saving ~1.05M redundant parameters.
+
+### Model Hyperparameters:
+| Hyperparameter | Value | Description |
+|---|---|---|
+| **Parameters** | `5,290,496` (~5.29M) | Optimized for rapid research iterations |
+| **Layers ($L$)** | `6` | Number of stacked Transformer blocks |
+| **Hidden Dimension ($d$)** | `256` | Model embedding dimension |
+| **Attention Heads ($H$)** | `4` | Number of parallel attention heads ($d_h = 64$) |
+| **FFN Intermediate Dim** | `688` | Standard LLaMA-style $\approx \frac{8}{3}d$ expansion |
+| **Context Length ($T$)** | `256` | Maximum sequence length per window |
+| **Vocabulary Size ($V$)** | `1,837` | Byte-Level BPE tokens |
+
+---
+
+## 📚 Two-Stage Pre-training Curriculum
+
+Following the curriculum learning strategies of **LLaMA 3**, **DeepSeek-V3**, and **MiniCPM**, training is split into two distinct, high-impact phases:
+
+```text
+[ STAGE 1: FOUNDATION (80% of steps) ]
+  ├── 45% Educational Text & Stories (Science, biology, astronomy, narrative prose)
+  ├── 35% General Python Code (Algorithms, data structures, control flow)
+  ├── 10% Basic Mathematics (Arithmetic, operator precedence)
+  └── 10% General Knowledge (World facts, natural sciences QA)
+                         │
+                         ▼
+[ STAGE 2: ANNEALING PHASE (20% of steps) ]
+  ├── 40% Deep Math & Logic (Linear equations mx + b = c, inequalities, ratios)
+  ├── 40% Clean Code (PEP 484 type annotations, full docstrings, assertions)
+  └── 20% Synthetic Chain-of-Thought (Scratchpad reasoning with <think>...</think>)
+  └── Learning Rate Cooldown: Smooth decay from 3e-4 down to 1e-5
+```
+
+---
+
+## 🔤 Byte-Level BPE (BBPE) Tokenizer
+
+The custom tokenizer is built on **Byte-Level Byte-Pair Encoding** (standardized by GPT-4 and LLaMA):
+- **Zero Out-of-Vocabulary (OOV):** Grounded in the 256 fundamental UTF-8 bytes ($0\text{x}00 \rightarrow 0\text{xFF}$). Any unseen character, symbol, or foreign language decomposes into raw bytes (Byte-fallback) with **zero `<unk>` tokens**.
+- **Individual Digit Tokenization:** Every digit (`0` through `9`) is explicitly split (`Digits(individual_digits=True)`), enabling the model to learn multi-digit column arithmetic instead of treating large numbers as opaque symbols.
+- **Whitespace & Code Preservation:** Spaces and indentation are preserved via byte tokens (`Ġ`), retaining precise Python indentation structures.
+- **Dedicated Reasoning Tokens:** Embedded `<think>` and `</think>` tags to structure Chain-of-Thought scratchpads.
+
+---
+
+## 🔬 Optimizer Diagnostics & Metrics
+
+When comparing different architectures, measuring Loss alone is insufficient. Alba-Model tracks **5 scientific metrics** saved to `checkpoints/metrics.json` and visualizes them on a 6-panel dashboard:
+
+1. **Cross-Entropy Loss:** Evaluated on independent Train and Validation splits.
+2. **Perplexity ($\text{PPL} = \exp(\mathcal{L})$):** Measures model uncertainty; lower PPL indicates sharper predictions.
+3. **Adam Update-to-Weight Ratio ($\frac{\|\Delta \theta\|_2}{\|\theta\|_2}$):** The gold-standard optimizer diagnostic. Tracks whether step updates stay in the sweet spot ($\sim 10^{-3}$) or risk divergence ($> 0.1$).
+4. **Gradient Norm ($\|\nabla_\theta \mathcal{L}\|_2$):** Monitors training stability and guards against gradient explosions or vanishing gradients.
+5. **Throughput & Latency:** Real-time tokens/second and step latency (ms) for benchmarking computational efficiency.
+
+---
+
+## 📁 Repository Structure
+
+```text
+Alba-model/
+├── main.ipynb                   # Master Google Colab Dashboard (1-click execution)
+├── README.md                    # Project overview & quickstart guide
+├── TRAINING_METHODOLOGY.md      # Scientific specification for curriculum & metrics
+├── train.py                     # Multi-phase training engine (AdamW/Adam, metrics tracking)
+├── generate.py                  # Autoregressive generation & CoT problem solver
+├── compare_models.py            # CLI tool for multi-architecture comparative analysis
+├── typing_extensions.py         # Environment compatibility shim
+├── checkpoints/
+│   ├── best_model.pt            # Serialized weights of the best checkpoint
+│   └── metrics.json             # Full training history & evaluation logs
+├── data/
+│   ├── prepare_data.py          # Synthetic curriculum data generator
+│   ├── process_data.py          # High-speed uint16 binary tensor compiler
+│   ├── raw/
+│   │   ├── phase1_foundation.txt
+│   │   └── phase2_annealing.txt
+│   └── processed/
+│       ├── phase1_train.bin & phase1_val.bin
+│       └── phase2_train.bin & phase2_val.bin
+├── tokenizer/
+│   ├── train_tokenizer.py       # Byte-Level BPE training script
+│   └── tokenizer.json           # Serialized vocabulary (1,837 tokens)
+└── src/
+    ├── __init__.py
+    ├── config.py                # Model hyperparameter dataclass (ModelArgs)
+    ├── model.py                 # PyTorch Transformer (RMSNorm, RoPE, Attention, SwiGLU)
+    └── dataset.py               # Memory-mapped (np.memmap) zero-copy DataLoader
+```
+
+---
+
+## 🚀 Quickstart Guide
+
+### 1. Run on Google Colab (Recommended)
+You can train and evaluate Alba-Model on a free Google Colab **Nvidia T4 GPU**:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/khangkaka066/Alba-model/blob/main/main.ipynb)
+
+1. Open [`main.ipynb`](https://colab.research.google.com/github/khangkaka066/Alba-model/blob/main/main.ipynb) via the badge above.
+2. Navigate to **Runtime** $\rightarrow$ **Change runtime type** $\rightarrow$ select **T4 GPU**.
+3. Click **Runtime** $\rightarrow$ **Run all**.
+
+---
+
+### 2. Run Locally (Mac GPU MPS / CUDA / CPU)
+
+Clone the repository and install requirements:
+
+```bash
+git clone https://github.com/khangkaka066/Alba-model.git
+cd Alba-model
+pip install torch tokenizers matplotlib
+```
+
+#### Step A: Generate Curriculum Data
+```bash
+python data/prepare_data.py
+```
+
+#### Step B: Train the Tokenizer
+```bash
+python tokenizer/train_tokenizer.py
+```
+
+#### Step C: Compile Binary Datasets
+```bash
+python data/process_data.py
+```
+
+#### Step D: Pre-train the Model
+```bash
+# Trains with AdamW across Phase 1 (80%) and Phase 2 (20% Annealing)
+python train.py --exp_name alba_v1 --max_iters 2500 --batch_size 32 --seq_len 128 --lr 1e-3
+```
+
+#### Step E: Test Inference & Math Reasoning
+```bash
+# Multi-step arithmetic reasoning with Chain-of-Thought
+python generate.py --prompt "Instruction: Solve the multi-step word problem with detailed logical chain of thought.\nQuestion: Alice has 35 apples. Alice gives 12 to Bob and buys 8 more. How many apples does Alice have now?\n<think>" --temperature 0.3
+
+# Clean Python code generation
+python generate.py --prompt "# Python Implementation: binary_search\ndef binary_search(arr: list[int], target: int) -> int:" --temperature 0.2
+```
+
+---
+
+### 3. Benchmarking & Comparing Architectures
+
+When experimenting with alternative architectural variants (e.g., LayerNorm vs. RMSNorm, GELU vs. SwiGLU, or Adam vs. AdamW):
+
+```bash
+# 1. Train Model A (AdamW)
+python train.py --exp_name arch_adamw --optimizer adamw --max_iters 2000
+
+# 2. Train Model B (Standard Adam)
+python train.py --exp_name arch_adam --optimizer adam --max_iters 2000
+
+# 3. Compare their learning curves, Perplexity, and gradient stability
+python compare_models.py --files checkpoints/arch_adamw_metrics.json checkpoints/arch_adam_metrics.json --output comparison.png
+```
+
+---
+
+## 📖 Methodology & Specifications
+
+For an in-depth mathematical breakdown of the two-stage curriculum, token distribution tables, and optimizer diagnostic thresholds, consult [`TRAINING_METHODOLOGY.md`](TRAINING_METHODOLOGY.md).
