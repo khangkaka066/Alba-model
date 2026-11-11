@@ -62,7 +62,7 @@ def plot_comparison(experiments: list[dict], output_path: str):
         return
 
     fig, axs = plt.subplots(2, 2, figsize=(16, 11))
-    fig.suptitle("🔬 BẢNG SO SÁNH HIỆU NĂNG CÁC KIẾN TRÚC MÔ HÌNH LLM", fontsize=16, fontweight="bold")
+    fig.suptitle("Alba-Model: Architecture Comparison Benchmark (5.29M vs 26.64M)", fontsize=16, fontweight="bold")
 
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
     markers = ['o', 's', '^', 'D', 'v', 'p']

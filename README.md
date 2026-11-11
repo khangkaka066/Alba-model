@@ -81,16 +81,23 @@ Alba-Model abandons legacy Transformer constructs (e.g., standard LayerNorm, abs
 4. **Causal Scaled Dot-Product Attention (SDPA):** Hardware-accelerated causal attention (FlashAttention / Apple MPS compatible) preventing information leakage from future tokens.
 5. **Weight Tying:** Shares the embedding weight matrix with the final output projection head, saving ~1.05M redundant parameters.
 
-### Model Hyperparameters:
-| Hyperparameter | Value | Description |
-|---|---|---|
-| **Parameters** | `5,290,496` (~5.29M) | Optimized for rapid research iterations |
-| **Layers ($L$)** | `6` | Number of stacked Transformer blocks |
-| **Hidden Dimension ($d$)** | `256` | Model embedding dimension |
-| **Attention Heads ($H$)** | `4` | Number of parallel attention heads ($d_h = 64$) |
-| **FFN Intermediate Dim** | `688` | Standard LLaMA-style $\approx \frac{8}{3}d$ expansion |
-| **Context Length ($T$)** | `256` | Maximum sequence length per window |
-| **Vocabulary Size ($V$)** | `1,837` | Byte-Level BPE tokens |
+### Model Architectural Variants & Hyperparameters:
+
+| Variant | Parameters | Layers ($L$) | Hidden Dim ($d$) | Heads ($H$) | SwiGLU Dim | Best Val Loss | Best Val PPL | Throughput (T4) |
+|---|---|---|---|---|---|---|---|---|
+| **Alba-5M (Compact Baseline)** | `5,290,496` (~5.29M) | 6 | 256 | 4 | 688 | **0.1082** | **1.11** | ~64,055 tok/s |
+| **Alba-26M (Scaled Frontier)** | `26,639,360` (~26.64M) | 8 | 512 | 8 | 1,376 | **0.1104** | **1.12** | ~77,274 tok/s |
+
+### 📊 Empirical Training Dashboards & Benchmark Comparison:
+
+| Alba-5M Dashboard (~5.29M) | Alba-26M Dashboard (~26.64M) |
+|---|---|
+| <img src="checkpoints/modern_transformer_llama_dashboard.png" width="480" alt="Alba-5M Dashboard" /> | <img src="checkpoints/modern_transformer_llama_26M_dashboard.png" width="480" alt="Alba-26M Dashboard" /> |
+
+#### Head-to-Head Architecture Comparison Benchmark:
+<p align="center">
+  <img src="checkpoints/comparison_5M_vs_26M.png" width="850" alt="Alba-Model Benchmark Comparison" />
+</p>
 
 ---
 
