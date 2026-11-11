@@ -246,7 +246,7 @@ def main():
     print("\n" + "=" * 65)
     print("🚀 BẮT ĐẦU HUẤN LUYỆN ĐA GIAI ĐOẠN")
     print(f"   - Thí nghiệm: {args.exp_name}")
-    print(f"   - Kiến trúc Residual: {args.residual_type.upper()} ({'Geometric Orthogonal Residual' if args.residual_type == 'gor' else 'Standard Residual (x + u)'})")
+    print(f"   - Kiến trúc Residual: {args.residual_type.upper()} ({'Geometric Orthogonal Residual v2 (GOR-v2)' if args.residual_type == 'gor' else 'Standard Residual (x + u)'})")
     print(f"   - Bộ tối ưu: {opt_choice.upper()}")
     print(f"   - Giai đoạn 1 (Nền tảng): Bước 1 ➔ {phase1_iters} (80%)")
     print(f"   - Giai đoạn 2 (Annealing): Bước {phase1_iters + 1} ➔ {args.max_iters} (20%)")

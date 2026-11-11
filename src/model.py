@@ -123,25 +123,28 @@ class SwiGLU(nn.Module):
 
 
 # -----------------------------------------------------------------------------
-# 5. Geometric Orthogonal Residual (GOR - Đột phá kiến trúc 2026)
+# 5. Geometric Orthogonal Residual v2 (GOR-v2 - Đột phá kiến trúc 2026)
 # -----------------------------------------------------------------------------
 class GeometricOrthogonalResidual(nn.Module):
     """
-    Geometric Orthogonal Residual (GOR):
-    Cải tiến Residual Connection thuần túy bằng toán học hình học trong không gian Hilbert (0 tham số phụ).
+    Geometric Orthogonal Residual v2 (GOR-v2):
+    Cải tiến Residual Connection thuần túy bằng toán học hình học vi phân (0 tham số phụ).
     
-    Phân rã bản cập nhật đề xuất u = f(x) thành 2 thành phần độc lập:
+    Phân rã bản cập nhật u = f(x) trong không gian Hilbert thành:
     1. u_perp (Thành phần trực giao - Tri thức mới hoàn toàn):
-       Vuông góc với dòng chính x, mở rộng không gian biểu diễn mà KHÔNG làm nhiễu
-       thông tin đã có -> Luôn được cộng trọn vẹn 100%.
+       Vuông góc với dòng chính x -> Luôn được cộng trọn vẹn 100%.
     2. u_parallel (Thành phần song song - Củng cố / Xung đột tri thức cũ):
-       Được kiểm duyệt qua góc tương quan cosin: rho = cos(x, u).
-       - Nếu rho > 0 (Đồng thuận / Củng cố): Cho phép truyền qua có điều biến phi(rho) = rho.
-       - Nếu rho <= 0 (Xung đột gradient / Triệt tiêu tri thức): phi(rho) = 0 -> Dập tắt xung đột ngay lập tức!
+       Điều biến bằng hàm mượt trơn C^infinity:
+       phi(rho) = 2.0 * sigmoid(k * rho)
+       - Tại rho = 0 (khởi tạo ngẫu nhiên): phi(0) = 1.0 -> Giữ nguyên 100% Identity Residual,
+         loại bỏ hoàn toàn độ trễ khởi động ban đầu.
+       - Khi rho > 0 (đồng thuận): Củng cố nhẹ tri thức tích lũy (lên tới ~1.5 - 2.0).
+       - Khi rho < 0 (xung đột gradient): Dập tắt êm ả về sát 0, triệt tiêu nhiễu phá hoại.
     """
-    def __init__(self, eps: float = 1e-7):
+    def __init__(self, eps: float = 1e-7, k: float = 3.0):
         super().__init__()
         self.eps = eps
+        self.k = k
 
     def forward(self, x: torch.Tensor, u: torch.Tensor) -> torch.Tensor:
         # x: (B, T, d), u: (B, T, d)
@@ -159,8 +162,8 @@ class GeometricOrthogonalResidual(nn.Module):
         u_parallel = (dot / (norm_sq_x + self.eps)) * x
         u_perp = u - u_parallel
         
-        # Điều biến hình học có điều kiện phi(rho) = ReLU(rho)
-        phi = F.relu(rho)
+        # GOR-v2: Điều biến trơn C^infinity bảo toàn Identity tại rho=0
+        phi = 2.0 * torch.sigmoid(self.k * rho)
         
         return x + u_perp + phi * u_parallel
 
