@@ -41,6 +41,9 @@ def parse_args():
     parser.add_argument("--seq_len", type=int, default=128, help="Độ dài ngữ cảnh token")
     parser.add_argument("--max_iters", type=int, default=2500, help="Tổng số bước huấn luyện")
     parser.add_argument("--eval_interval", type=int, default=250, help="Khoảng cách giữa các lần đánh giá")
+    parser.add_argument("--dim", type=int, default=512, help="Số chiều vector embedding (d_model)")
+    parser.add_argument("--n_layers", type=int, default=8, help="Số tầng Transformer (L)")
+    parser.add_argument("--n_heads", type=int, default=8, help="Số attention heads (H)")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate cực đại")
     parser.add_argument("--device", type=str, default=None, help="cuda / mps / cpu")
     return parser.parse_args()
@@ -149,21 +152,21 @@ def plot_training_dashboard(metrics_data: dict, save_path: str):
     ax = axs[1, 2]
     ax.axis('off')
     summary_text = (
-        f"📊 TỔNG KẾT MÔ HÌNH:\n"
+        f"MODEL SUMMARY:\n"
         f"-----------------------------------------\n"
-        f"• Tên kiến trúc: {metrics_data['exp_name']}\n"
-        f"• Bộ tối ưu: {opt_name} (Weight Decay: {metrics_data['training_config']['weight_decay']})\n"
-        f"• Tổng tham số: {metrics_data['total_params']:,} (~{metrics_data['total_params']/1e6:.2f}M)\n"
+        f"• Architecture: {metrics_data['exp_name']}\n"
+        f"• Optimizer: {opt_name} (Weight Decay: {metrics_data['training_config']['weight_decay']})\n"
+        f"• Total Params: {metrics_data['total_params']:,} (~{metrics_data['total_params']/1e6:.2f}M)\n"
         f"• Embedding Dim (d): {metrics_data['architecture']['dim']}\n"
-        f"• Số tầng Transformer (L): {metrics_data['architecture']['n_layers']}\n"
-        f"• Số Attention Heads (H): {metrics_data['architecture']['n_heads']}\n"
+        f"• Transformer Layers (L): {metrics_data['architecture']['n_layers']}\n"
+        f"• Attention Heads (H): {metrics_data['architecture']['n_heads']}\n"
         f"• Context Length (T): {metrics_data['architecture']['max_seq_len']}\n"
-        f"• Kích thước từ vựng (V): {metrics_data['architecture']['vocab_size']}\n"
+        f"• Vocab Size (V): {metrics_data['architecture']['vocab_size']}\n"
         f"-----------------------------------------\n"
-        f"🏆 KẾT QUẢ TỐT NHẤT:\n"
+        f"BEST METRICS:\n"
         f"• Best Val Loss: {metrics_data['best_val_loss']:.4f}\n"
         f"• Best Val Perplexity: {metrics_data['best_val_ppl']:.2f}\n"
-        f"• Tốc độ trung bình: {sum(tokens_per_sec)/len(tokens_per_sec):,.0f} tokens/s\n"
+        f"• Avg Throughput: {sum(tokens_per_sec)/len(tokens_per_sec):,.0f} tokens/s\n"
     )
     ax.text(0.05, 0.95, summary_text, transform=ax.transAxes, fontsize=11,
             verticalalignment='top', fontfamily='monospace',
@@ -204,9 +207,9 @@ def main():
     # 4. Khởi tạo mô hình
     model_args = ModelArgs(
         vocab_size=actual_vocab_size,
-        dim=256,
-        n_layers=6,
-        n_heads=4,
+        dim=args.dim,
+        n_layers=args.n_layers,
+        n_heads=args.n_heads,
         max_seq_len=256,
         dropout=0.0
     )
@@ -359,6 +362,7 @@ def main():
     metrics_file = os.path.join(CHECKPOINT_DIR, f"{args.exp_name}_metrics.json")
     default_metrics_file = os.path.join(CHECKPOINT_DIR, "metrics.json")
     dashboard_img = os.path.join(CHECKPOINT_DIR, "training_dashboard.png")
+    exp_dashboard_img = os.path.join(CHECKPOINT_DIR, f"{args.exp_name}_dashboard.png")
 
     full_metrics = {
         "exp_name": args.exp_name,
@@ -390,6 +394,7 @@ def main():
 
     # Vẽ dashboard tổng kết
     plot_training_dashboard(full_metrics, dashboard_img)
+    plot_training_dashboard(full_metrics, exp_dashboard_img)
     print("=" * 65)
 
 

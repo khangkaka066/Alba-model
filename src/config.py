@@ -3,12 +3,13 @@ from dataclasses import dataclass
 @dataclass
 class ModelArgs:
     """
-    Siêu tham số cấu hình cho mô hình Mini-LLM (khoảng 5M - 6M tham số).
-    Phù hợp chạy mượt trên Colab GPU (T4) lẫn CPU/MPS cá nhân.
+    Siêu tham số cấu hình cho mô hình Alba-Model:
+    - Scaled default: d=512, L=8, H=8 (~26.64M tham số).
+    - Compact: d=256, L=6, H=4 (~5.29M tham số).
     """
-    vocab_size: int = 1024        # Sẽ được cập nhật chính xác theo file tokenizer.json
-    dim: int = 256                # Số chiều vector embedding (d_model)
-    n_layers: int = 6             # Số tầng Transformer (L)
-    n_heads: int = 4              # Số attention heads (H), mỗi head có d_h = 256 / 4 = 64
+    vocab_size: int = 1837        # Sẽ được cập nhật chính xác theo file tokenizer.json
+    dim: int = 512                # Số chiều vector embedding (d_model)
+    n_layers: int = 8             # Số tầng Transformer (L)
+    n_heads: int = 8              # Số attention heads (H), mỗi head d_h = 512 / 8 = 64
     max_seq_len: int = 256        # Độ dài ngữ cảnh tối đa một lần đưa vào (T)
-    dropout: float = 0.0          # Dropout (đặt 0.0 khi dữ liệu sạch để tránh cản trở suy luận)
+    dropout: float = 0.0          # Dropout
