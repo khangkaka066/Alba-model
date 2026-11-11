@@ -81,6 +81,8 @@ def main():
         ckpt = torch.load(args.checkpoint, map_location=device)
     
     raw_args = ckpt["model_args"]
+    if isinstance(raw_args, dict) and "residual_type" not in raw_args:
+        raw_args["residual_type"] = "standard"
     model_args = ModelArgs(**raw_args) if isinstance(raw_args, dict) else raw_args
     
     model = MiniLLM(model_args).to(device)

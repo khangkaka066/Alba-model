@@ -44,6 +44,7 @@ def parse_args():
     parser.add_argument("--dim", type=int, default=512, help="Số chiều vector embedding (d_model)")
     parser.add_argument("--n_layers", type=int, default=8, help="Số tầng Transformer (L)")
     parser.add_argument("--n_heads", type=int, default=8, help="Số attention heads (H)")
+    parser.add_argument("--residual_type", type=str, default="gor", choices=["gor", "standard"], help="Cơ chế Residual: gor (Geometric Orthogonal Residual) hoặc standard (x + u)")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate cực đại")
     parser.add_argument("--device", type=str, default=None, help="cuda / mps / cpu")
     return parser.parse_args()
@@ -211,11 +212,12 @@ def main():
         n_layers=args.n_layers,
         n_heads=args.n_heads,
         max_seq_len=256,
-        dropout=0.0
+        dropout=0.0,
+        residual_type=args.residual_type
     )
     model = MiniLLM(model_args).to(device)
     param_count = model.count_parameters()
-    print(f"🧠 Khởi tạo mô hình thành công: {param_count:,} tham số (~{param_count / 1e6:.2f}M)")
+    print(f"🧠 Khởi tạo mô hình thành công: {param_count:,} tham số (~{param_count / 1e6:.2f}M) [Residual: {args.residual_type.upper()}]")
 
     # 5. Khởi tạo bộ tối ưu hóa (Hỗ trợ AdamW và Adam)
     opt_choice = args.optimizer.lower()
@@ -244,6 +246,7 @@ def main():
     print("\n" + "=" * 65)
     print("🚀 BẮT ĐẦU HUẤN LUYỆN ĐA GIAI ĐOẠN")
     print(f"   - Thí nghiệm: {args.exp_name}")
+    print(f"   - Kiến trúc Residual: {args.residual_type.upper()} ({'Geometric Orthogonal Residual' if args.residual_type == 'gor' else 'Standard Residual (x + u)'})")
     print(f"   - Bộ tối ưu: {opt_choice.upper()}")
     print(f"   - Giai đoạn 1 (Nền tảng): Bước 1 ➔ {phase1_iters} (80%)")
     print(f"   - Giai đoạn 2 (Annealing): Bước {phase1_iters + 1} ➔ {args.max_iters} (20%)")
@@ -373,6 +376,7 @@ def main():
         "architecture": asdict(model_args),
         "training_config": {
             "optimizer": opt_choice,
+            "residual_type": args.residual_type,
             "weight_decay": args.weight_decay,
             "max_iters": args.max_iters,
             "batch_size": args.batch_size,

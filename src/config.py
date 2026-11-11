@@ -13,3 +13,4 @@ class ModelArgs:
     n_heads: int = 8              # Số attention heads (H), mỗi head d_h = 512 / 8 = 64
     max_seq_len: int = 256        # Độ dài ngữ cảnh tối đa một lần đưa vào (T)
     dropout: float = 0.0          # Dropout
+    residual_type: str = "gor"    # Cơ chế Residual: 'gor' (Geometric Orthogonal Residual) hoặc 'standard' (x + u)

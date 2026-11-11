@@ -123,25 +123,84 @@ class SwiGLU(nn.Module):
 
 
 # -----------------------------------------------------------------------------
-# 5. Transformer Block (Pre-norm Architecture)
+# 5. Geometric Orthogonal Residual (GOR - Đột phá kiến trúc 2026)
+# -----------------------------------------------------------------------------
+class GeometricOrthogonalResidual(nn.Module):
+    """
+    Geometric Orthogonal Residual (GOR):
+    Cải tiến Residual Connection thuần túy bằng toán học hình học trong không gian Hilbert (0 tham số phụ).
+    
+    Phân rã bản cập nhật đề xuất u = f(x) thành 2 thành phần độc lập:
+    1. u_perp (Thành phần trực giao - Tri thức mới hoàn toàn):
+       Vuông góc với dòng chính x, mở rộng không gian biểu diễn mà KHÔNG làm nhiễu
+       thông tin đã có -> Luôn được cộng trọn vẹn 100%.
+    2. u_parallel (Thành phần song song - Củng cố / Xung đột tri thức cũ):
+       Được kiểm duyệt qua góc tương quan cosin: rho = cos(x, u).
+       - Nếu rho > 0 (Đồng thuận / Củng cố): Cho phép truyền qua có điều biến phi(rho) = rho.
+       - Nếu rho <= 0 (Xung đột gradient / Triệt tiêu tri thức): phi(rho) = 0 -> Dập tắt xung đột ngay lập tức!
+    """
+    def __init__(self, eps: float = 1e-7):
+        super().__init__()
+        self.eps = eps
+
+    def forward(self, x: torch.Tensor, u: torch.Tensor) -> torch.Tensor:
+        # x: (B, T, d), u: (B, T, d)
+        dot = (x * u).sum(dim=-1, keepdim=True)
+        norm_sq_x = (x * x).sum(dim=-1, keepdim=True)
+        norm_sq_u = (u * u).sum(dim=-1, keepdim=True)
+        
+        norm_x = torch.sqrt(norm_sq_x + self.eps)
+        norm_u = torch.sqrt(norm_sq_u + self.eps)
+        
+        # Góc tương quan cosin rho trong khoảng [-1, 1]
+        rho = dot / (norm_x * norm_u + self.eps)
+        
+        # Phân rã trực giao Gram-Schmidt
+        u_parallel = (dot / (norm_sq_x + self.eps)) * x
+        u_perp = u - u_parallel
+        
+        # Điều biến hình học có điều kiện phi(rho) = ReLU(rho)
+        phi = F.relu(rho)
+        
+        return x + u_perp + phi * u_parallel
+
+
+# -----------------------------------------------------------------------------
+# 6. Transformer Block (Hỗ trợ GOR và Standard Residual)
 # -----------------------------------------------------------------------------
 class TransformerBlock(nn.Module):
     def __init__(self, args: ModelArgs):
         super().__init__()
+        self.residual_type = getattr(args, "residual_type", "gor")
         self.attention_norm = RMSNorm(args.dim)
         self.attention = CausalSelfAttention(args)
         self.ffn_norm = RMSNorm(args.dim)
         self.feed_forward = SwiGLU(args.dim)
 
+        if self.residual_type == "gor":
+            self.res_attn = GeometricOrthogonalResidual()
+            self.res_ffn = GeometricOrthogonalResidual()
+
     def forward(self, x: torch.Tensor, freqs_cis: torch.Tensor) -> torch.Tensor:
-        # Pre-norm + Residual Connection
-        h = x + self.attention(self.attention_norm(x), freqs_cis)
-        out = h + self.feed_forward(self.ffn_norm(h))
+        # Nhánh 1: Multi-Head Attention
+        u_attn = self.attention(self.attention_norm(x), freqs_cis)
+        if self.residual_type == "gor":
+            h = self.res_attn(x, u_attn)
+        else:
+            h = x + u_attn
+
+        # Nhánh 2: SwiGLU Feed-Forward Network
+        u_ffn = self.feed_forward(self.ffn_norm(h))
+        if self.residual_type == "gor":
+            out = self.res_ffn(h, u_ffn)
+        else:
+            out = h + u_ffn
+
         return out
 
 
 # -----------------------------------------------------------------------------
-# 6. MiniLLM: Mô hình ngôn ngữ hoàn chỉnh
+# 7. MiniLLM: Mô hình ngôn ngữ hoàn chỉnh
 # -----------------------------------------------------------------------------
 class MiniLLM(nn.Module):
     def __init__(self, args: ModelArgs):
