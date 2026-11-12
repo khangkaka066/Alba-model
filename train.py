@@ -24,6 +24,7 @@ from tokenizers import Tokenizer
 from src.config import ModelArgs
 from src.model import MiniLLM
 from src.dataset import BinaryDataset, get_batch
+from src.optimizer import create_optimizer
 
 BASE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(BASE_DIR, "data", "processed")
@@ -35,7 +36,7 @@ os.makedirs(CHECKPOINT_DIR, exist_ok=True)
 def parse_args():
     parser = argparse.ArgumentParser(description="Huấn luyện Mini-LLM & Thu thập Metrics nghiên cứu")
     parser.add_argument("--exp_name", type=str, default="modern_transformer_llama", help="Tên thí nghiệm / kiến trúc")
-    parser.add_argument("--optimizer", type=str, default="adamw", choices=["adamw", "adam"], help="Bộ tối ưu: adamw hoặc adam")
+    parser.add_argument("--optimizer", type=str, default="geo_muon", choices=["geo_muon", "adamw", "adam"], help="Bộ tối ưu: geo_muon, adamw, hoặc adam")
     parser.add_argument("--weight_decay", type=float, default=0.01, help="Hệ số phạt suy giảm trọng số (Weight Decay)")
     parser.add_argument("--batch_size", type=int, default=32, help="Kích thước batch")
     parser.add_argument("--seq_len", type=int, default=128, help="Độ dài ngữ cảnh token")
@@ -232,22 +233,15 @@ def main():
 
     # 5. Khởi tạo bộ tối ưu hóa (Hỗ trợ AdamW và Adam)
     opt_choice = args.optimizer.lower()
-    if opt_choice == "adam":
-        optimizer = torch.optim.Adam(
-            model.parameters(),
-            lr=args.lr,
-            betas=(0.9, 0.95),
-            weight_decay=args.weight_decay
-        )
-        print("⚙️ Bộ tối ưu hóa: Standard Adam (L2 Regularization)")
-    else:
-        optimizer = torch.optim.AdamW(
-            model.parameters(),
-            lr=args.lr,
-            betas=(0.9, 0.95),
-            weight_decay=args.weight_decay
-        )
-        print("⚙️ Bộ tối ưu hóa: AdamW (Decoupled Weight Decay)")
+    # 5. Khởi tạo Optimizer (GEO-Muon Hybrid, AdamW hoặc Adam)
+    optimizer = create_optimizer(
+        model=model,
+        optimizer_type=opt_choice,
+        lr=args.lr,
+        weight_decay=args.weight_decay,
+        momentum=0.95,
+        betas=(0.9, 0.95),
+    )
 
     # 6. Chia số bước: 80% Phase 1, 20% Phase 2
     phase1_iters = int(args.max_iters * 0.8)

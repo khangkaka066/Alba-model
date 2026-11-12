@@ -168,16 +168,20 @@ class OrthogonalSubMoE(nn.Module):
         top_k_logits, top_k_indices = torch.topk(router_logits, self.top_k, dim=-1)
         top_k_weights = F.softmax(top_k_logits, dim=-1)
         
-        # 4. Gom kết quả từ các Sub-Experts được chọn
+        # 4. Gom kết quả từ các Sub-Experts bằng Scatter-Gather Vector hóa (Giải quyết triệt để Điểm nghẽn A)
+        # Giảm số lần lặp từ K x E (16 lần) xuống E (8 lần) và tận dụng CUDA index_add_ nguyên tử
         routed_out = torch.zeros_like(x_flat)
-        for k in range(self.top_k):
-            idx_k = top_k_indices[:, k]
-            w_k = top_k_weights[:, k].unsqueeze(-1)
-            for e_idx in range(self.n_experts):
-                mask = (idx_k == e_idx)
-                if mask.any():
-                    out_e = self.sub_experts[e_idx](x_flat[mask])
-                    routed_out[mask] += out_e * w_k[mask]
+        flat_topk_indices = top_k_indices.view(-1)
+        flat_topk_weights = top_k_weights.view(-1, 1)
+        token_indices = torch.arange(B * T, device=x.device).repeat_interleave(self.top_k)
+        
+        for e_idx in range(self.n_experts):
+            expert_mask = (flat_topk_indices == e_idx)
+            if expert_mask.any():
+                t_idx = token_indices[expert_mask]
+                w = flat_topk_weights[expert_mask]
+                out_e = self.sub_experts[e_idx](x_flat[t_idx])
+                routed_out.index_add_(0, t_idx, out_e * w)
                     
         total_out = shared_out + routed_out.view(B, T, C)
         
