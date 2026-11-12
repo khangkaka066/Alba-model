@@ -7,16 +7,26 @@ This document formalizes the mathematical foundations, system architectures, and
 
 ---
 
-## 📊 1. Verified Empirical Benchmark Ledger
+## 📊 1. Verified Empirical Benchmark Ledger (Iso-Parameters 51M vs. Baselines)
 
-All experiments were conducted on identical compute hardware (Google Colab L4/T4 GPU) on the two-stage curriculum dataset (2,500 total steps: 2,000 steps Foundation Phase + 500 steps Annealing Phase).
+All experiments were conducted on identical compute hardware (Google Colab NVIDIA L4 GPU) on the two-stage curriculum dataset (2,500 total steps: 2,000 steps Foundation Phase + 500 steps Annealing Phase).
 
-| Architecture | Parameters | Active FLOPs | Residual Formulation | Optimizer | Best Val Loss | Best Val PPL | Gradient Norm | Throughput (tok/s) |
+### 🏆 Cohort 1: Nghiên cứu Đối đầu Tuyệt đối cùng quy mô ~51M-52M Tham số (Iso-Parameters)
+
+| Architecture Variant | Total Params | Active FLOPs | Residual Type | Optimizer | Best Val Loss | Final Val Loss (Step 2500) | Gradient Norm | Throughput |
 |---|---|---|---|---|---|---|---|---|
-| **Alba-26M (LLaMA Standard)** | 26.64M | 1.0x (26.6M) | Classical ($x + u$) | AdamW | 0.1104 | 1.12 | $0.65 \text{--} 0.82$ (Volatile) | **77,277** |
-| **Alba-26M (GOR-v2 Ours)** | 26.64M | 1.0x (26.6M) | **GOR-v2 ($C^\infty$ Smooth)** | AdamW | 0.1111 | 1.12 | $0.22 \text{--} 0.35$ (50% Flatter) | 33,572 |
-| **Alba-51M (OS-MoE Baseline)** | 51.64M | 1.0x (26.6M) | GOR-v2 | AdamW | 0.1147 | 1.12 | $0.28 \text{--} 0.56$ | 14,343 |
-| **Alba-51M (OS-MoE + GEO-Muon) 🏆** | **51.64M** | **1.0x (26.6M)** | **GOR-v2** | **GEO-Muon (Frontier 2026)** | **0.1028 (All-Time Record)** | **1.11** | **$0.10 \text{--} 0.18$ (Ultra-Flat)** | **12,756** |
+| **Alba-51M (Dense GOR-v2 Innovation) 🏆** | **52.34M** | 52.34M (100%) | **GOR-v2 ($C^\infty$)** | AdamW | **0.0917** | **0.2363 (-7.6% Error)** | **0.08 -- 0.24** | 16,901 tok/s |
+| **Alba-51M (OS-MoE Baseline MoE) 🚀** | **51.64M** | **26.28M (-50% FLOPs)** | **GOR-v2 ($C^\infty$)** | AdamW | **0.0924** | **0.2474 (Beats LLaMA 51M)** | **0.08 -- 0.28** | **20,644 tok/s** |
+| **Alba-51M (Dense LLaMA Standard)** | 52.34M | 52.34M (100%) | Classical ($x + u$) | AdamW | 0.0917 | 0.2558 | 0.09 -- 0.26 | 19,093 tok/s |
+| **Alba-51M (OS-MoE + GEO-Muon Deep Manifold) ⚡** | 51.64M | 26.28M (-50% FLOPs) | GOR-v2 ($C^\infty$) | GEO-Muon | 0.1066 (Train: **0.0590**) | 0.2787 | 0.10 -- 0.65 | 11,932 tok/s |
+
+### 📌 Cohort 2: Tham chiếu Kích thước Nhỏ (Compact Baselines 26M & 5M)
+
+| Architecture Variant | Total Params | Active FLOPs | Residual Type | Optimizer | Best Val Loss | Final Val Loss (Step 2500) | Gradient Norm | Throughput |
+|---|---|---|---|---|---|---|---|---|
+| **Alba-26M (Dense GOR-v2 Innovation)** | 26.64M | 26.64M (100%) | GOR-v2 ($C^\infty$) | AdamW | 0.1111 | 0.2450 | 0.11 -- 0.25 | 33,572 tok/s |
+| **Alba-26M (Dense LLaMA Standard)** | 26.64M | 26.64M (100%) | Classical ($x + u$) | AdamW | 0.1104 | 0.2400 | 0.10 -- 0.22 | **77,277 tok/s** |
+| **Alba-5M (Compact Baseline)** | 5.29M | 5.29M (100%) | Classical ($x + u$) | AdamW | 0.1082 | 0.2500 | 0.10 -- 0.30 | 64,055 tok/s |
 
 ---
 

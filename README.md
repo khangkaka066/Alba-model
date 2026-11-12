@@ -88,15 +88,24 @@ Alba-Model abandons legacy Transformer constructs (e.g., standard LayerNorm, abs
 5. **SwiGLU Activation:** SiLU-gated linear projections boosting mathematical and symbolic reasoning capabilities.
 6. **Weight Tying:** Shares embedding and output classification matrices, saving ~1M redundant parameters.
 
-### Model Architectural Variants & Empirical Benchmark:
+### Model Architectural Variants & Empirical Benchmark (Iso-Parameters 51M vs. Baselines):
 
-| Variant | Total Params | Active Params | Residual Formulation | Optimizer | Best Val Loss | Best Val PPL | Gradient Norm | Throughput |
+#### 🏆 Cohort 1: Nghiên cứu Đối đầu Tuyệt đối cùng quy mô ~51M-52M Tham số (Iso-Parameters)
+
+| Architecture Variant | Total Params | Active FLOPs | Residual Type | Optimizer | Best Val Loss | Final Val Loss (2500) | Gradient Norm | Throughput |
 |---|---|---|---|---|---|---|---|---|
-| **Alba-5M (Baseline)** | 5.29M | 5.29M (100%) | Standard ($x + u$) | AdamW | 0.1082 | 1.11 | ~0.45 | 64,055 tok/s |
-| **Alba-26M (LLaMA Standard)** | 26.64M | 26.64M (100%) | Standard ($x + u$) | AdamW | 0.1104 | 1.12 | $0.65 \text{--} 0.82$ (Volatile) | **77,277 tok/s** |
-| **Alba-26M (GOR-v2 Innovation)** | 26.64M | 26.64M (100%) | **GOR-v2 ($C^\infty$)** | AdamW | 0.1111 | 1.12 | $0.22 \text{--} 0.35$ (50% Flatter) | 33,572 tok/s |
-| **Alba-51M (OS-MoE Baseline)** | 51.64M | 26.64M (51.6%) | GOR-v2 | AdamW | 0.1147 | 1.12 | $0.28 \text{--} 0.56$ | 14,343 tok/s |
-| **Alba-51M (OS-MoE + GEO-Muon) 🏆** | **51.64M** | **26.64M (51.6%)** | **GOR-v2** | **GEO-Muon** | **0.1028 (Champion)** | **1.11** | **$0.10 \text{--} 0.18$ (Ultra-Flat)** | **12,756 tok/s** |
+| **Alba-51M (Dense GOR-v2 Innovation) 🏆** | **52.34M** | 52.34M (100%) | **GOR-v2 ($C^\infty$)** | AdamW | **0.0917** | **0.2363 (-7.6% Error)** | **0.08 -- 0.24** | 16,901 tok/s |
+| **Alba-51M (OS-MoE Baseline MoE) 🚀** | **51.64M** | **26.28M (-50% FLOPs)** | **GOR-v2 ($C^\infty$)** | AdamW | **0.0924** | **0.2474 (Beats LLaMA 51M)** | **0.08 -- 0.28** | **20,644 tok/s** |
+| **Alba-51M (Dense LLaMA Standard)** | 52.34M | 52.34M (100%) | Classical ($x + u$) | AdamW | 0.0917 | 0.2558 | 0.09 -- 0.26 | 19,093 tok/s |
+| **Alba-51M (OS-MoE + GEO-Muon Deep Manifold) ⚡** | 51.64M | 26.28M (-50% FLOPs) | GOR-v2 ($C^\infty$) | GEO-Muon | 0.1066 (Train: **0.0590**) | 0.2787 | 0.10 -- 0.65 | 11,932 tok/s |
+
+#### 📌 Cohort 2: Tham chiếu Kích thước Nhỏ (Compact Baselines 26M & 5M)
+
+| Architecture Variant | Total Params | Active FLOPs | Residual Type | Optimizer | Best Val Loss | Final Val Loss (2500) | Gradient Norm | Throughput |
+|---|---|---|---|---|---|---|---|---|
+| **Alba-26M (Dense GOR-v2 Innovation)** | 26.64M | 26.64M (100%) | GOR-v2 ($C^\infty$) | AdamW | 0.1111 | 0.2450 | 0.11 -- 0.25 | 33,572 tok/s |
+| **Alba-26M (Dense LLaMA Standard)** | 26.64M | 26.64M (100%) | Classical ($x + u$) | AdamW | 0.1104 | 0.2400 | 0.10 -- 0.22 | **77,277 tok/s** |
+| **Alba-5M (Compact Baseline)** | 5.29M | 5.29M (100%) | Classical ($x + u$) | AdamW | 0.1082 | 0.2500 | 0.10 -- 0.30 | 64,055 tok/s |
 
 ### 📊 Empirical Training Dashboards & Benchmark Comparison:
 
