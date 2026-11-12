@@ -455,12 +455,21 @@
           <td><strong>0 (Parameter-Free)</strong></td>
         </tr>
         <tr class="highlight-row" style="background-color: #fdf2f8;">
-          <td><strong style="color: #9333ea;">Alba-51M (OS-MoE Ours)</strong></td>
+          <td><strong style="color: #9333ea;">Alba-51M (OS-MoE AdamW)</strong></td>
           <td><strong>51.64M</strong></td>
-          <td><strong>GOR-v2 + OS-MoE (1 Shared + 8 Sub-Experts)</strong></td>
+          <td><strong>GOR-v2 + OS-MoE (AdamW)</strong></td>
           <td><strong>0.1147</strong></td>
           <td><strong>1.12</strong></td>
-          <td><strong style="color: #9333ea;">\(0.28 \text{--} 0.56\) (Zero Spike)</strong></td>
+          <td><strong style="color: #9333ea;">\(0.28 \text{--} 0.56\)</strong></td>
+          <td><strong>+25.0M capacity (1.0x Active FLOPs)</strong></td>
+        </tr>
+        <tr class="highlight-row" style="background-color: #ecfdf5; border-left: 4px solid #059669;">
+          <td><strong style="color: #059669;">Alba-51M (OS-MoE + GEO-Muon Champion)</strong></td>
+          <td><strong>51.64M</strong></td>
+          <td><strong>GOR-v2 + OS-MoE + GEO-Muon (Frontier 2026)</strong></td>
+          <td><strong style="color: #059669;">0.1101 (Kỷ lục mới)</strong></td>
+          <td><strong>1.12</strong></td>
+          <td><strong style="color: #059669;">\(0.15 \text{--} 0.28\) (Phẳng kỷ lục)</strong></td>
           <td><strong>+25.0M capacity (1.0x Active FLOPs)</strong></td>
         </tr>
       </tbody>
