@@ -27,12 +27,13 @@ def parse_args():
     parser.add_argument("--max_new_tokens", type=int, default=120, help="Số token tối đa sinh thêm")
     parser.add_argument("--temperature", type=float, default=0.5, help="Độ sáng tạo / ngẫu nhiên")
     parser.add_argument("--top_k", type=int, default=40, help="Top-K token có xác suất cao nhất")
+    parser.add_argument("--repetition_penalty", type=float, default=1.25, help="Hệ số phạt lặp từ (1.0 = không phạt, 1.2 - 1.3 = tối ưu)")
     parser.add_argument("--interactive", action="store_true", help="Chế độ nhập prompt liên tục")
     return parser.parse_args()
 
 
 @torch.no_grad()
-def generate_text(model, tokenizer, prompt, device, max_new_tokens=120, temperature=0.5, top_k=40):
+def generate_text(model, tokenizer, prompt, device, max_new_tokens=120, temperature=0.5, top_k=40, repetition_penalty=1.25):
     model.eval()
     encoded = tokenizer.encode(prompt).ids
     idx = torch.tensor(encoded, dtype=torch.long, device=device).unsqueeze(0)
@@ -43,8 +44,19 @@ def generate_text(model, tokenizer, prompt, device, max_new_tokens=120, temperat
         idx_cond = idx if idx.size(1) <= model.args.max_seq_len else idx[:, -model.args.max_seq_len:]
         logits, _ = model(idx_cond)
         
-        # Lấy logits của token cuối cùng và chia cho temperature
-        logits = logits[:, -1, :] / max(temperature, 1e-5)
+        # Lấy logits của token cuối cùng
+        logits = logits[:, -1, :]
+
+        # Repetition Penalty: Phạt các token đã xuất hiện để triệt tiêu vòng lặp từ
+        if repetition_penalty != 1.0:
+            for token_id in set(idx[0].tolist()):
+                if logits[0, token_id] < 0:
+                    logits[0, token_id] *= repetition_penalty
+                else:
+                    logits[0, token_id] /= repetition_penalty
+
+        # Chia cho temperature
+        logits = logits / max(temperature, 1e-5)
 
         # Top-K filtering
         if top_k is not None:
@@ -105,7 +117,8 @@ def main():
                 model, tokenizer, prompt, device,
                 max_new_tokens=args.max_new_tokens,
                 temperature=args.temperature,
-                top_k=args.top_k
+                top_k=args.top_k,
+                repetition_penalty=args.repetition_penalty,
             )
             print("\n--- KẾT QUẢ SINH ---")
             print(output)
@@ -120,7 +133,8 @@ def main():
             model, tokenizer, prompt, device,
             max_new_tokens=args.max_new_tokens,
             temperature=args.temperature,
-            top_k=args.top_k
+            top_k=args.top_k,
+            repetition_penalty=args.repetition_penalty,
         )
         print("\n--- KẾT QUẢ SINH ---")
         print(output)
