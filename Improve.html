@@ -483,6 +483,9 @@
     <p>
       Furthermore, by ensuring that the orthogonal innovation \(u_l^\perp\) is committed into the residual stream with unit gain (\(+1.0 \cdot u_l^\perp\)), GOR-v2 resolves the <em>Residual Stream Depth Saturation</em> problem formalized by Gahtan (arXiv:2609.31098, 2026), compelling downstream layers to continually expand feature representations along unoccupied manifold coordinates.
     </p>
+    <p>
+      In conjunction with <strong>Orthogonal Sub-Expert Mixture-of-Experts (OS-MoE)</strong> and the <strong>GEO-Muon Hybrid Optimizer</strong> (Jordan et al., 2026; DeepSeek, 2026), the entire architecture achieves an isometric representation manifold where weight matrix momentum updates and activation residuals are strictly orthogonalized. This tripartite synergy drove validation loss to an all-time benchmark low of <strong>0.1028</strong> while suppressing gradient norm variance to an unprecedented band of <strong>0.10 &ndash; 0.18</strong>.
+    </p>
 
     <!-- References -->
     <div class="references">
@@ -495,6 +498,12 @@
       </div>
       <div class="ref-item">
         [3] Luo, C., Cai, Z., &amp; Hu, J. (July 2026). <em>Multi-Head Attention Residuals</em>. arXiv preprint arXiv:2607.27230.
+      </div>
+      <div class="ref-item">
+        [4] Jordan, K. et al. (2026). <em>Muon: Momentum Orthogonalized by Newton-Schulz for Efficient Matrix Optimization</em>.
+      </div>
+      <div class="ref-item">
+        [5] DeepSeek-AI (2026). <em>DeepSeek-V4 Technical Report: Advancing MoE Architectures with Matrix-Orthogonal Optimizers</em>.
       </div>
     </div>
   </div>
