@@ -530,144 +530,23 @@
         where $\Theta_{\text{Muon}}$ encompasses all 2D internal linear projections (Attention $W_q, W_k, W_v, W_o$, SwiGLU, and Sub-Experts—<strong>98.1% of parameters</strong>), while $\Theta_{\text{AdamW}}$ handles vocabulary lookup embeddings, output heads, and 1D normalizations (<strong>1.9% of parameters</strong>) to protect Zipfian distribution fidelity.
       </p>
 
-      <!-- SECTION V: DUAL PARETO FRONTIER FIGURES (DEEPSEEK-MOE & MOONSHOT AI PARADIGM) -->
-      <div class="full-width">
-        <div style="display: grid; grid-template-columns: 1fr; gap: 28px; margin-bottom: 24px;">
-          
-          <!-- Fig 1(a): Activated Params vs Performance (DeepSeekMoE Style) -->
-          <div class="figure-container">
-            <div class="figure-box" style="padding: 16px 14px; background: #ffffff; border: 1.5px solid #000000; box-shadow: 0 2px 10px rgba(0,0,0,0.04);">
-              <canvas id="canvasMoEPareto" width="860" height="480"></canvas>
-            </div>
-            <div class="figure-caption" style="margin-top: 10px; font-size: 9.5pt; text-align: justify; line-height: 1.4;">
-              <strong>Fig. 1(a). Number of Activated Parameters vs. Average Performance Pareto Frontier (Modeled after DeepSeekMoE, 2024/2026).</strong> 
-              Alba-51M OS-MoE (denoted by the <span style="color: #dc2626; font-weight: bold;">Red Star &#9733;</span>) activates only <strong>26.28M parameters</strong> per token (-50% FLOPs), yet matches and outperforms Dense LLaMA-51M (which requires <strong>52.34M activated parameters</strong>, or 2.0&times; the compute). The red dashed line denotes the dense scaling law trendline. Alba-51M OS-MoE shatters the dense Pareto frontier, delivering higher representation quality than a 52M dense model while cutting compute costs in half.
-            </div>
-          </div>
-
-          <!-- Fig 1(b): Training FLOPs vs Performance Frontier (Moonshot AI / Moonlight Style) -->
-          <div class="figure-container">
-            <div class="figure-box" style="padding: 16px 14px; background: #ffffff; border: 1.5px solid #000000; box-shadow: 0 2px 10px rgba(0,0,0,0.04);">
-              <canvas id="canvasFlopsPareto" width="860" height="480"></canvas>
-            </div>
-            <div class="figure-caption" style="margin-top: 10px; font-size: 9.5pt; text-align: justify; line-height: 1.4;">
-              <strong>Fig. 1(b). Training FLOPs vs. Performance Pareto Frontier (Modeled after Moonshot AI / Moonlight, 2025/2026).</strong> 
-              Alba-51M OS-MoE (<span style="color: #dc2626; font-weight: bold;">Red Star &#9733;</span>) advances the Pareto frontier by achieving <strong>75.3%</strong> performance score at only <strong>1.61&times;10<sup>15</sup> FLOPs</strong>. In contrast, Dense LLaMA-51M consumes <strong>3.22&times;10<sup>15</sup> FLOPs</strong> (2.0&times; compute) but reaches only <strong>74.4%</strong>, falling well below the Pareto efficiency boundary. The light-blue shaded region highlights the compute-optimal Pareto frontier.
-            </div>
-          </div>
-
-        </div>
-
-        <table class="ieee-table">
-          <caption>TABLE I: Head-to-Head Empirical Benchmark Across 2,500 Curriculum Steps (Iso-Parameters ~51M-52M Evaluation)</caption>
-          <thead>
-            <tr>
-              <th>Architecture Variant</th>
-              <th>Total Params</th>
-              <th>Active FLOPs</th>
-              <th>Residual Type</th>
-              <th>Optimizer</th>
-              <th>Best Val Loss</th>
-              <th>Final Val Loss (Step 2500)</th>
-              <th>Grad Norm</th>
-              <th>Throughput</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="champion-row">
-              <td><strong>Alba-51M (Dense GOR-v2 Innovation) 🏆</strong></td>
-              <td>52.34M</td>
-              <td>52.34M (100%)</td>
-              <td>GOR-v2 ($C^\infty$)</td>
-              <td>AdamW</td>
-              <td><strong>0.0917</strong></td>
-              <td><strong>0.2363 (-7.6% Error)</strong></td>
-              <td><strong>0.08 -- 0.24</strong></td>
-              <td>16,901 tok/s</td>
-            </tr>
-            <tr style="background-color: #f8fafc;">
-              <td><strong>Alba-51M (OS-MoE Baseline MoE) 🚀</strong></td>
-              <td>51.64M</td>
-              <td><strong>26.28M (-50% FLOPs)</strong></td>
-              <td>GOR-v2 ($C^\infty$)</td>
-              <td>AdamW</td>
-              <td>0.0924</td>
-              <td><strong>0.2474 (Outperforms Dense LLaMA)</strong></td>
-              <td>0.08 -- 0.28</td>
-              <td><strong>20,644 tok/s</strong></td>
-            </tr>
-            <tr>
-              <td>Alba-51M (Dense LLaMA Standard Baseline)</td>
-              <td>52.34M</td>
-              <td>52.34M (100%)</td>
-              <td>Classical ($x + u$)</td>
-              <td>AdamW</td>
-              <td><strong>0.0917</strong></td>
-              <td>0.2558</td>
-              <td>0.09 -- 0.26</td>
-              <td>19,093 tok/s</td>
-            </tr>
-            <tr>
-              <td>Alba-51M (OS-MoE + GEO-Muon Deep Manifold) ⚡</td>
-              <td>51.64M</td>
-              <td>26.28M (-50% FLOPs)</td>
-              <td>GOR-v2 ($C^\infty$)</td>
-              <td>GEO-Muon</td>
-              <td>0.1066 (Train: <strong>0.0590 🏆</strong>)</td>
-              <td>0.2787</td>
-              <td>0.10 -- 0.65</td>
-              <td>11,932 tok/s</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- SECTION V Cont. -->
-      <h2 class="ieee-heading">V. Empirical Evaluation: Iso-Parameters Benchmark (~51M)</h2>
+      <!-- SECTION V: COMPREHENSIVE 2026 EVALUATION SUITE (FRAMEWORK SPECIFICATION) -->
+      <h2 class="ieee-heading">V. Empirical Evaluation Framework (2026 Metric Suite)</h2>
       <p>
-        To ensure complete scientific rigor and eliminate parameter-capacity confounding factors, all four primary models were evaluated under an exact <strong>Iso-Parameters (~51M-52M total parameters)</strong> framework across a 2,500-step curriculum (Phase 1: Foundation educational text/code, Steps 1--2000; Phase 2: Logic, reasoning, and synthetic Chain-of-Thought annealing, Steps 2001--2500).
+        In accordance with frontier 2026 evaluation standards (Gahtan et al., ACML 2026; Moonshot AI, 2026; DeepSeek-AI, 2026), conventional scalar cross-entropy loss and saturated multiple-choice benchmarks are insufficient to diagnose structural improvements in deep architectures. Consequently, the empirical assessment of Alba-Model is formulated across a <strong>Multidimensional 4-Tier Diagnostic Framework</strong>:
       </p>
       <p>
-        <strong>1. GOR-v2 Eliminates Deep-Layer Saturation:</strong> In the 16-layer stack, standard LLaMA-51M experiences residual feature cancellation, ending Phase 2 at a validation loss of $0.2558$. In contrast, Dense GOR-v2-51M achieves a final validation loss of <strong>0.2363</strong> (a <strong>7.6% error reduction</strong>) and train loss of $0.2084$, proving that smooth $C^\infty$ orthogonal modulation prevents representation saturation in deep networks.
+        <strong>1. Geometric & Representation Health:</strong> Direct measurement of Effective Depth ($\mathcal{D}_{\text{eff}}$ via CKA decay profiles), residual cosine alignment ($\rho_l$), MoE routing entropy ($H_{\text{route}}$), and expert load coefficient of variation ($\text{CV}_{\text{load}}$).
       </p>
       <p>
-        <strong>2. OS-MoE Delivers 50% FLOPs Savings with Superior Generalization:</strong> Alba-51M OS-MoE activates only 26.28M parameters per token (1 Shared Expert + Top-2 Sub-Experts). Remarkably, it not only matches the 16-layer Dense models in Phase 1 (Best Val Loss $0.0924$), but outperforms Dense LLaMA-51M in final annealing ($0.2474$ vs. $0.2558$) while delivering a peak throughput of <strong>20,644 tokens/s</strong> (+8.1% faster than Dense LLaMA).
+        <strong>2. Compute-Optimal FLOPs Efficiency:</strong> Iso-compute Pareto frontier mapping comparing active parameters against reasoning capability ($6 \times N_{\text{active}} \times D_{\text{tokens}}$), Bits-Per-Byte (BPB) compression, and Model FLOPs Utilization (MFU).
       </p>
       <p>
-        <strong>3. GEO-Muon Reaches Unprecedented Manifold Depth:</strong> By performing polar orthogonal updates across all 248 2D matrix weight tensors, GEO-Muon drives the Phase 1 training loss down to <strong>0.0590</strong> (compared to $0.0729$ for AdamW), verifying that Stiefel manifold optimization enables significantly deeper representation learning.
-      </p>
-      <h3 class="ieee-subheading">A. Deep Analysis of GEO-Muon Optimization Dynamics</h3>
-      <p>
-        The empirical behavior of GEO-Muon ($Train\ Loss = 0.0590$, $Final\ Val\ Loss = 0.2787$, $Throughput = 11,932\ \text{tok/s}$) reveals three fundamental theoretical insights into non-Euclidean matrix optimization:
+        <strong>3. Optimization Dynamics on Stiefel Manifolds:</strong> Tracking singular value isometric preservation ratio ($\sigma_{\max} / \sigma_{\min}$) and the Frobenius update momentum ratio ($\|\Delta W\|_F / \|W\|_F \approx 10^{-3}$).
       </p>
       <p>
-        <strong>1. Why GEO-Muon Drives Train Loss to an Unprecedented 0.0590:</strong> Standard AdamW normalizes gradients coordinate-wise ($rac{m_t}{\sqrt{v_t}}$), which severely squashes updates along high-variance directions and stretches low-variance noise. In contrast, GEO-Muon computes the polar factor $O_t$ via order-5 Newton-Schulz iterations (Eq. 15), forcing <em>all singular values of the 2D update step to equal exactly 1.0</em> (isometric transformation). This eliminates singular value decay across all 248 weight matrices, allowing the model to fully utilize the high-dimensional capacity of its 51.6M parameters and fitting the foundation corpus significantly deeper than AdamW ($0.0590$ vs. $0.0720$).
+        <strong>4. Functional Multi-Step Reasoning & Code Generalization:</strong> Rigorous evaluation on exact-match Chain-of-Thought (CoT-EM) reasoning and runtime-profiled algorithmic code synthesis.
       </p>
-      <p>
-        <strong>2. The Generalization Gap During Curriculum Shifts (Phase 1 to Phase 2):</strong> While AdamW's second moment $v_t$ acts as an implicit variance brake that slows down parameter shifts when migrating from educational text to Chain-of-Thought math, Muon's isometric updates possess high geometric stiffness. At a constant learning rate of $\eta = 10^{-3}$, this geometric rigidity induces slight overshooting on small dataset distributions. As established in frontier 2026 literature (Jordan, 2026; DeepSeek, 2026), Muon requires a lower learning rate ($\eta \approx 2\text{--}4 \times 10^{-4}$) and benefits exponentially when scaled to web-scale pretraining datasets (>10B tokens) where deep manifold capacity prevents underfitting.
-      </p>
-      <p>
-        <strong>3. Throughput Variance (11,932 vs. 20,644 tok/s):</strong> AdamW executes purely element-wise $O(N)$ scalar operations. In contrast, GEO-Muon evaluates quintic matrix polynomials involving two matrix multiplications (GEMMs) per Newton-Schulz step across 5 iterations for each of the 248 2D tensors, totaling over 2,480 GEMM operations per optimizer step. On single-GPU setups (NVIDIA L4/T4), this computational overhead accounts for the throughput delta, which becomes negligible on multi-node distributed clusters where communication latency dominates.
-      </p>
-
-
-      <div class="figure-container">
-        <div class="figure-box">
-          <canvas id="canvasGradNorm" width="400" height="220"></canvas>
-        </div>
-        <div class="figure-caption">
-          <strong>Fig. 1. Gradient Norm Dynamics in 16-layer and MoE stacks.</strong> All models remain well beneath the 1.0 clip threshold. GOR-v2 (blue) maintains an ultra-flat gradient trajectory of $0.08\text{--}0.24$, completely dampening the deep-layer gradient explosion.
-        </div>
-      </div>
-
-      <div class="figure-container">
-        <div class="figure-box">
-          <canvas id="canvasLoss" width="400" height="220"></canvas>
-        </div>
-        <div class="figure-caption">
-          <strong>Fig. 2. Validation Loss Curves across the 51M Iso-Parameters Cohort.</strong> Blue: Dense GOR-v2-51M (Best Final Val Loss: <strong>0.2363</strong>). Purple: OS-MoE-51M with 50% FLOPs (Final Val Loss: <strong>0.2474</strong>). Orange: Dense LLaMA-51M Baseline ($0.2558$). Red: OS-MoE + GEO-Muon (Deepest Train Loss: <strong>0.0590</strong>).
-        </div>
-      </div>
 
       <!-- Interactive Gram-Schmidt Visualizer Full Span -->
       <div class="full-width">
@@ -930,27 +809,7 @@
     }
 
     
-    function renderFlopsParetoPlot() {
-      const w = flopsCanvas.width;
-      const h = flopsCanvas.height;
-      flopsCtx.clearRect(0, 0, w, h);
-
-      const padL = 80;
-      const padR = 45;
-      const padT = 40;
-      const padB = 65;
-      const plotW = w - padL - padR;
-      const plotH = h - padT - padB;
-
-      const xMin = 1.0;
-      const xMax = 3.6;
-      const yMin = 50.0;
-      const yMax = 82.0;
-
-      function toX(val) {
-        return padL + ((val - xMin) / (xMax - xMin)) * plotW;
-      }
-      function toY(val) {
+          function toY(val) {
         return padT + plotH - ((val - yMin) / (yMax - yMin)) * plotH;
       }
 
@@ -1133,27 +992,7 @@
       flopsCtx.fillText('Performance Pareto Frontier', padL + plotW - 225, padT + plotH - 24);
     }
 
-    function renderMoEParetoPlot() {
-      const w = paretoCanvas.width;
-      const h = paretoCanvas.height;
-      paretoCtx.clearRect(0, 0, w, h);
-
-      const padL = 80;
-      const padR = 45;
-      const padT = 40;
-      const padB = 65;
-      const plotW = w - padL - padR;
-      const plotH = h - padT - padB;
-
-      const xMin = 0.0;
-      const xMax = 62.0;
-      const yMin = 34.0;
-      const yMax = 54.0;
-
-      function toX(val) {
-        return padL + ((val - xMin) / (xMax - xMin)) * plotW;
-      }
-      function toY(val) {
+          function toY(val) {
         return padT + plotH - ((val - yMin) / (yMax - yMin)) * plotH;
       }
 
@@ -1273,23 +1112,7 @@
       paretoCtx.fillText('(26.28M Active / 51.6M Total)', starX - 12, starY + 12);
     }
 
-    function renderGradNormPlot() {
-      const w = gnCanvas.width;
-      const h = gnCanvas.height;
-      gnCtx.clearRect(0, 0, w, h);
-
-      const padX = 35, padY = 25;
-      const plotW = w - 2 * padX, plotH = h - 2 * padY;
-
-      gnCtx.strokeStyle = '#e5e7eb';
-      gnCtx.lineWidth = 1;
-      for (let g = 0; g <= 4; g++) {
-        const y = padY + (plotH / 4) * g;
-        gnCtx.beginPath();
-        gnCtx.moveTo(padX, y); gnCtx.lineTo(padX + plotW, y);
-        gnCtx.stroke();
-      }
-
+    
       gnCtx.fillStyle = '#6b7280';
       gnCtx.font = '8.5pt serif';
       gnCtx.fillText('1.0', padX - 22, padY + 4);
@@ -1340,23 +1163,7 @@
       gnCtx.fillText('Dense LLaMA-51M (0.09 - 0.26)', padX + 10, padY + 44);
     }
 
-    function renderLossPlot() {
-      const w = lossCanvas.width;
-      const h = lossCanvas.height;
-      lossCtx.clearRect(0, 0, w, h);
-
-      const padX = 35, padY = 25;
-      const plotW = w - 2 * padX, plotH = h - 2 * padY;
-
-      lossCtx.strokeStyle = '#e5e7eb';
-      lossCtx.lineWidth = 1;
-      for (let g = 0; g <= 4; g++) {
-        const y = padY + (plotH / 4) * g;
-        lossCtx.beginPath();
-        lossCtx.moveTo(padX, y); lossCtx.lineTo(padX + plotW, y);
-        lossCtx.stroke();
-      }
-
+    
       lossCtx.fillStyle = '#6b7280';
       lossCtx.font = '8.5pt serif';
       lossCtx.fillText('0.30', padX - 26, padY + 4);
@@ -1434,10 +1241,7 @@
     // Initial render
     renderDecomposition(0.0);
     renderModulationCurve(0.0);
-    renderMoEParetoPlot();
-    renderFlopsParetoPlot();
-    renderGradNormPlot();
-    renderLossPlot();
+    // Comparison render calls removed
   </script>
 </body>
 </html>
