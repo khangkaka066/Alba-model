@@ -45,11 +45,15 @@ def zeropower_via_newtonschulz5(G: torch.Tensor, steps: int = 5, eps: float = 1e
     norm = X.norm(dim=(-2, -1), keepdim=True) + eps
     X = X / norm
 
-    # Chuỗi lặp bậc 5 đại số
+    # Chuỗi lặp bậc 5 đại số (Tận dụng addmm nếu là ma trận 2D để tránh cấp phát bộ nhớ)
     for _ in range(steps):
         A = X @ X.mT
-        B = b * A + c * (A @ A)
-        X = a * X + B @ X
+        if X.dim() == 2:
+            B = torch.addmm(A, A, A, beta=b, alpha=c)
+            X = torch.addmm(X, B, X, beta=a, alpha=1.0)
+        else:
+            B = b * A + c * (A @ A)
+            X = a * X + B @ X
 
     if transposed:
         X = X.mT
@@ -118,12 +122,10 @@ class GEOMuon(torch.optim.Optimizer):
                     # 1. Trực giao hóa ma trận bằng Newton-Schulz bậc 5
                     O = zeropower_via_newtonschulz5(buf, steps=ns_steps)
 
-                    # 2. CẢI TIẾN ĐỘT PHÁ: Energy-Preserving Spectral Scaling (EPSS)
-                    # Bảo toàn chuẩn năng lượng Frobenius thực của gradient
-                    buf_norm = buf.norm(p="fro")
-                    o_norm = O.norm(p="fro") + 1e-7
-                    energy_scale = buf_norm / o_norm
-                    step_dir = O * energy_scale
+                    # 2. Điều phối tỷ lệ cập nhật ma trận trực giao (Aspect-Ratio Polar Scale)
+                    # Giữ tỷ lệ bước nhảy ||delta_w|| / ||w|| đạt tỷ lệ chuẩn vàng ~ 1e-3
+                    scale = max(1.0, O.size(-2) / O.size(-1)) ** 0.5
+                    step_dir = O * scale
 
                     # 3. Phạt suy giảm trọng số độc lập (Decoupled Weight Decay)
                     if weight_decay != 0:
@@ -222,7 +224,12 @@ def create_optimizer(
             # 3. KHÔNG phải là LM Head (output classification)
             # 4. KHÔNG phải là Router Gate (prototype cosine vectors)
             is_2d = len(param.shape) >= 2
-            is_embed_or_head = ("token_embedding" in name) or ("lm_head" in name)
+            is_embed_or_head = (
+                ("tok_embeddings" in name)
+                or ("token_embedding" in name)
+                or ("output" in name)
+                or ("lm_head" in name)
+            )
             is_gate = "gate" in name
             is_norm = "norm" in name or param.ndim < 2
 

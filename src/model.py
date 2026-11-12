@@ -298,9 +298,20 @@ class MiniLLM(nn.Module):
         # Weight tying: chia sẻ trọng số giữa bảng embedding và tầng output cuối
         self.output.weight = self.tok_embeddings.weight
         
+        # Khởi tạo trọng số chuẩn mực LLaMA (std = 0.02) triệt tiêu hoàn toàn hiện tượng nổ loss ban đầu
+        self.apply(self._init_weights)
+        
         # Đăng ký ma trận tần số RoPE dạng buffer không cần học
         freqs_cis = precompute_freqs_cis(args.dim // args.n_heads, args.max_seq_len)
         self.register_buffer("freqs_cis", freqs_cis)
+
+    def _init_weights(self, module):
+        if isinstance(module, nn.Linear):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            if module.bias is not None:
+                torch.nn.init.zeros_(module.bias)
+        elif isinstance(module, nn.Embedding):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
     def forward(self, idx: torch.Tensor, targets: torch.Tensor = None):
         B, T = idx.shape
