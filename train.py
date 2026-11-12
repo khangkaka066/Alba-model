@@ -45,6 +45,10 @@ def parse_args():
     parser.add_argument("--n_layers", type=int, default=8, help="Số tầng Transformer (L)")
     parser.add_argument("--n_heads", type=int, default=8, help="Số attention heads (H)")
     parser.add_argument("--residual_type", type=str, default="gor", choices=["gor", "standard"], help="Cơ chế Residual: gor (Geometric Orthogonal Residual) hoặc standard (x + u)")
+    parser.add_argument("--ffn_type", type=str, default="swiglu", choices=["swiglu", "os_moe"], help="Khối FFN: swiglu (Dense chuẩn) hoặc os_moe (Orthogonal Sub-Expert MoE)")
+    parser.add_argument("--n_experts", type=int, default=8, help="Số Sub-Experts cho OS-MoE")
+    parser.add_argument("--top_k", type=int, default=2, help="Số Sub-Experts kích hoạt trên mỗi token (Top-K)")
+    parser.add_argument("--moe_ortho_coeff", type=float, default=0.01, help="Hệ số phạt trực giao chống sụp đổ MoE")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate cực đại")
     parser.add_argument("--device", type=str, default=None, help="cuda / mps / cpu")
     return parser.parse_args()
@@ -213,11 +217,18 @@ def main():
         n_heads=args.n_heads,
         max_seq_len=256,
         dropout=0.0,
-        residual_type=args.residual_type
+        residual_type=args.residual_type,
+        ffn_type=args.ffn_type,
+        n_routed_experts=args.n_experts,
+        num_experts_per_tok=args.top_k,
+        moe_ortho_coeff=args.moe_ortho_coeff
     )
     model = MiniLLM(model_args).to(device)
     param_count = model.count_parameters()
-    print(f"🧠 Khởi tạo mô hình thành công: {param_count:,} tham số (~{param_count / 1e6:.2f}M) [Residual: {args.residual_type.upper()}]")
+    active_param_count = model.count_active_parameters()
+    print(f"🧠 Khởi tạo mô hình thành công: {param_count:,} tham số (~{param_count / 1e6:.2f}M) [Active: ~{active_param_count / 1e6:.2f}M]")
+    print(f"   - FFN / MoE: {args.ffn_type.upper()} ({f'{args.n_experts} Sub-Experts, Top-{args.top_k} active' if args.ffn_type == 'os_moe' else 'Dense SwiGLU'})")
+    print(f"   - Residual: {args.residual_type.upper()}")
 
     # 5. Khởi tạo bộ tối ưu hóa (Hỗ trợ AdamW và Adam)
     opt_choice = args.optimizer.lower()
@@ -246,6 +257,7 @@ def main():
     print("\n" + "=" * 65)
     print("🚀 BẮT ĐẦU HUẤN LUYỆN ĐA GIAI ĐOẠN")
     print(f"   - Thí nghiệm: {args.exp_name}")
+    print(f"   - Kiến trúc FFN: {args.ffn_type.upper()} ({f'OS-MoE ({args.n_experts} experts, top-{args.top_k})' if args.ffn_type == 'os_moe' else 'Dense SwiGLU'})")
     print(f"   - Kiến trúc Residual: {args.residual_type.upper()} ({'Geometric Orthogonal Residual v2 (GOR-v2)' if args.residual_type == 'gor' else 'Standard Residual (x + u)'})")
     print(f"   - Bộ tối ưu: {opt_choice.upper()}")
     print(f"   - Giai đoạn 1 (Nền tảng): Bước 1 ➔ {phase1_iters} (80%)")
@@ -370,6 +382,7 @@ def main():
     full_metrics = {
         "exp_name": args.exp_name,
         "total_params": param_count,
+        "active_params": active_param_count,
         "best_val_loss": round(best_val_loss, 4),
         "best_val_ppl": round(best_val_ppl, 2),
         "phase1_steps": phase1_iters,
@@ -377,6 +390,9 @@ def main():
         "training_config": {
             "optimizer": opt_choice,
             "residual_type": args.residual_type,
+            "ffn_type": args.ffn_type,
+            "n_experts": args.n_experts if args.ffn_type == "os_moe" else 1,
+            "top_k": args.top_k if args.ffn_type == "os_moe" else 1,
             "weight_decay": args.weight_decay,
             "max_iters": args.max_iters,
             "batch_size": args.batch_size,

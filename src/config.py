@@ -14,3 +14,7 @@ class ModelArgs:
     max_seq_len: int = 256        # Độ dài ngữ cảnh tối đa một lần đưa vào (T)
     dropout: float = 0.0          # Dropout
     residual_type: str = "gor"    # Cơ chế Residual: 'gor' (Geometric Orthogonal Residual) hoặc 'standard' (x + u)
+    ffn_type: str = "swiglu"      # Khối FFN: 'swiglu' (Dense LLaMA chuẩn) hoặc 'os_moe' (Orthogonal Sub-Expert MoE)
+    n_routed_experts: int = 8     # Tổng số Sub-Experts trong khối MoE
+    num_experts_per_tok: int = 2  # Số Sub-Experts kích hoạt cho mỗi token (Top-K)
+    moe_ortho_coeff: float = 0.01 # Hệ số phạt trực giao giữa các chuyên gia (chống sụp đổ tầng sâu)

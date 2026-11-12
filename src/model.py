@@ -123,6 +123,74 @@ class SwiGLU(nn.Module):
 
 
 # -----------------------------------------------------------------------------
+# 4b. Orthogonal Sub-Expert Mixture-of-Experts (OS-MoE - Đột phá 2026)
+# -----------------------------------------------------------------------------
+class OrthogonalSubMoE(nn.Module):
+    """
+    Orthogonal Sub-Expert Mixture-of-Experts (OS-MoE):
+    Kết hợp tinh hoa phân rã không gian con của Sub-MoE (AAAI 2026) và định tuyến trực giao.
+    
+    Cấu trúc:
+    1. 1 Shared Expert (SwiGLU, dim=688): Luôn kích hoạt 100% token để bảo toàn ngữ pháp nền tảng.
+    2. N Routed Sub-Experts (SwiGLU, dim=344): Phân bổ chuyên môn hóa sâu.
+    3. Cosine-bounded Router: Triệt tiêu hiện tượng sụp đổ tầng sâu do chuẩn vector bị bùng nổ.
+    4. Orthogonal Prototype Loss: Lực đẩy trực giao ép các chuyên gia vuông góc trong không gian Hilbert.
+    """
+    def __init__(self, dim: int, n_experts: int = 8, top_k: int = 2):
+        super().__init__()
+        self.dim = dim
+        self.n_experts = n_experts
+        self.top_k = top_k
+        
+        # 1 Shared Expert: luôn kích hoạt (chiếm ~50% dung lượng FFN tiêu chuẩn)
+        self.shared_expert = SwiGLU(dim, 688)
+        
+        # N Routed Sub-Experts: mỗi expert có kích thước gọn nhẹ
+        self.sub_experts = nn.ModuleList([SwiGLU(dim, 344) for _ in range(n_experts)])
+        
+        # Router Gate với chuẩn hóa Cosine để chống sụp đổ ở tầng sâu
+        self.gate = nn.Linear(dim, n_experts, bias=False)
+        self.eps = 1e-6
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        B, T, C = x.shape
+        x_flat = x.view(-1, C)
+        
+        # 1. Nhánh Shared Expert
+        shared_out = self.shared_expert(x)
+        
+        # 2. Định tuyến Cosine-bounded: chuẩn hóa cả x và vector prototype của gate
+        norm_x = F.normalize(x_flat, p=2, dim=-1, eps=self.eps)
+        norm_gate = F.normalize(self.gate.weight, p=2, dim=-1, eps=self.eps)
+        router_logits = F.linear(norm_x, norm_gate) * 10.0  # Tỉ lệ nhiệt độ gamma = 10.0
+        
+        # 3. Chọn Top-K Sub-Experts
+        top_k_logits, top_k_indices = torch.topk(router_logits, self.top_k, dim=-1)
+        top_k_weights = F.softmax(top_k_logits, dim=-1)
+        
+        # 4. Gom kết quả từ các Sub-Experts được chọn
+        routed_out = torch.zeros_like(x_flat)
+        for k in range(self.top_k):
+            idx_k = top_k_indices[:, k]
+            w_k = top_k_weights[:, k].unsqueeze(-1)
+            for e_idx in range(self.n_experts):
+                mask = (idx_k == e_idx)
+                if mask.any():
+                    out_e = self.sub_experts[e_idx](x_flat[mask])
+                    routed_out[mask] += out_e * w_k[mask]
+                    
+        total_out = shared_out + routed_out.view(B, T, C)
+        
+        # 5. Phạt phân rã trực giao (Orthogonal Prototype Repulsion Loss)
+        # Ép các vector trọng số của Router vuông góc với nhau -> Chống sụp đổ theo bầy đàn
+        gram = torch.mm(norm_gate, norm_gate.t())
+        eye = torch.eye(self.n_experts, device=x.device)
+        ortho_loss = ((gram - eye) ** 2).sum() / (self.n_experts * (self.n_experts - 1))
+        
+        return total_out, ortho_loss
+
+
+# -----------------------------------------------------------------------------
 # 5. Geometric Orthogonal Residual v2 (GOR-v2 - Đột phá kiến trúc 2026)
 # -----------------------------------------------------------------------------
 class GeometricOrthogonalResidual(nn.Module):
@@ -169,37 +237,46 @@ class GeometricOrthogonalResidual(nn.Module):
 
 
 # -----------------------------------------------------------------------------
-# 6. Transformer Block (Hỗ trợ GOR và Standard Residual)
+# 6. Transformer Block (Hỗ trợ GOR, Standard Residual, SwiGLU và OS-MoE)
 # -----------------------------------------------------------------------------
 class TransformerBlock(nn.Module):
     def __init__(self, args: ModelArgs):
         super().__init__()
         self.residual_type = getattr(args, "residual_type", "gor")
+        self.ffn_type = getattr(args, "ffn_type", "swiglu")
         self.attention_norm = RMSNorm(args.dim)
         self.attention = CausalSelfAttention(args)
         self.ffn_norm = RMSNorm(args.dim)
-        self.feed_forward = SwiGLU(args.dim)
+        
+        if self.ffn_type == "os_moe":
+            self.feed_forward = OrthogonalSubMoE(
+                dim=args.dim,
+                n_experts=getattr(args, "n_routed_experts", 8),
+                top_k=getattr(args, "num_experts_per_tok", 2)
+            )
+        else:
+            self.feed_forward = SwiGLU(args.dim)
 
         if self.residual_type == "gor":
             self.res_attn = GeometricOrthogonalResidual()
             self.res_ffn = GeometricOrthogonalResidual()
 
-    def forward(self, x: torch.Tensor, freqs_cis: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, freqs_cis: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         # Nhánh 1: Multi-Head Attention
         u_attn = self.attention(self.attention_norm(x), freqs_cis)
-        if self.residual_type == "gor":
-            h = self.res_attn(x, u_attn)
-        else:
-            h = x + u_attn
+        h = self.res_attn(x, u_attn) if self.residual_type == "gor" else x + u_attn
 
-        # Nhánh 2: SwiGLU Feed-Forward Network
-        u_ffn = self.feed_forward(self.ffn_norm(h))
-        if self.residual_type == "gor":
-            out = self.res_ffn(h, u_ffn)
+        # Nhánh 2: Feed-Forward (SwiGLU hoặc OrthogonalSubMoE)
+        aux_loss = torch.tensor(0.0, device=x.device)
+        norm_h = self.ffn_norm(h)
+        if self.ffn_type == "os_moe":
+            u_ffn, aux_loss = self.feed_forward(norm_h)
         else:
-            out = h + u_ffn
+            u_ffn = self.feed_forward(norm_h)
 
-        return out
+        out = self.res_ffn(h, u_ffn) if self.residual_type == "gor" else h + u_ffn
+
+        return out, aux_loss
 
 
 # -----------------------------------------------------------------------------
@@ -226,9 +303,11 @@ class MiniLLM(nn.Module):
         h = self.tok_embeddings(idx)
         freqs_cis = self.freqs_cis[:T]
         
+        total_aux_loss = torch.tensor(0.0, device=idx.device)
         # Đi qua từng tầng Transformer
         for layer in self.layers:
-            h = layer(h, freqs_cis)
+            h, layer_aux = layer(h, freqs_cis)
+            total_aux_loss = total_aux_loss + layer_aux
             
         h = self.norm(h)
         logits = self.output(h)
@@ -236,10 +315,24 @@ class MiniLLM(nn.Module):
         loss = None
         if targets is not None:
             # Cross-Entropy Loss: dự đoán token tiếp theo
-            loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1))
+            ce_loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1))
+            moe_coeff = getattr(self.args, "moe_ortho_coeff", 0.01) if getattr(self.args, "ffn_type", "swiglu") == "os_moe" else 0.0
+            loss = ce_loss + moe_coeff * total_aux_loss
             
         return logits, loss
 
     def count_parameters(self) -> int:
         """Đếm tổng số tham số có thể huấn luyện trong mô hình."""
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
+
+    def count_active_parameters(self) -> int:
+        """Đếm số tham số được kích hoạt trên mỗi token (Active Parameters)."""
+        if getattr(self.args, "ffn_type", "swiglu") != "os_moe":
+            return self.count_parameters()
+        
+        # Với MoE: Active params = Toàn bộ mô hình - các inactive sub-experts
+        n_routed = getattr(self.args, "n_routed_experts", 8)
+        top_k = getattr(self.args, "num_experts_per_tok", 2)
+        inactive_per_layer = (n_routed - top_k) * (3 * self.args.dim * 344)
+        total_inactive = inactive_per_layer * self.args.n_layers
+        return self.count_parameters() - total_inactive
