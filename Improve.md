@@ -45,6 +45,32 @@ Average Performance
 
 ---
 
+
+### 🚀 Training FLOPs vs. Performance Pareto Frontier (Chuẩn Moonshot AI / Moonlight 2025/2026)
+
+Mô phỏng trực quan theo đúng phong cách của bài báo **Moonshot AI / Moonlight** (*Training FLOPs vs. Performance Pareto Frontier*):
+
+```text
+Performance Score (%)
+   ▲
+80 │                                                 ·:  (Vùng biên tối ưu Pareto)
+   │                           ★ Alba-51M OS-MoE .-:' ● Dense GOR-v2 51M (3.22e15 FLOPs, 76.4%) 🏆
+75 │                    · - - -│- - - - - - - -:'     ● Dense LLaMA 51M (3.22e15 FLOPs, 74.4%)
+   │                           │ (1.61e15 FLOPs, 75.3%)
+70 │                           ● OS-MoE GEO-Muon (1.61e15 FLOPs, 72.1%)
+   │
+65 │                           ● Dense GOR-v2 26M (1.64e15 FLOPs, 64.2%)
+   │                           ● Dense LLaMA 26M (1.64e15 FLOPs, 62.8%)
+60 │
+   │   ● Compact 5M (0.33e15 FLOPs, 53.5%)
+50 └───┴───────────────────────┴──────────────────────┴──────────────────► Training FLOPs
+      0.3e15                  1.61e15                3.22e15
+```
+
+* **Ý nghĩa:** Trong khi `Dense LLaMA-51M` ngốn tới **3.22e15 FLOPs** (gấp 2.0x chi phí điện toán) nhưng chỉ đạt **74.4%**, mô hình **Alba-51M OS-MoE (Ngôi sao đỏ ★)** chỉ cần **1.61e15 FLOPs** để đạt **75.3%**, thiết lập một đường biên hiệu quả Pareto vượt trội so với mọi mô hình Dense chuẩn.
+
+---
+
 ## 📐 2. Breakthrough 1: Geometric Orthogonal Residual v2 (GOR-v2)
 
 ### 2.1 Problem Statement
