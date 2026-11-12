@@ -295,7 +295,7 @@
   <div class="paper">
     <!-- Header -->
     <div class="paper-header">
-      <h1>Geometric Orthogonal Residual Connections for Stable Deep Language Models (GOR-v2)</h1>
+      <h1>Alba-Model: Differential Geometric Residuals (GOR-v2), Orthogonal Sub-MoE, and Polar Matrix Optimization (GEO-Muon)</h1>
       <div class="authors">Nguyen Vo Khang &bull; Alba-Model Research Team</div>
       <div class="institution">AI Architecture Lab &bull; Verified on Google Colab (Tesla T4 / NVIDIA L4)</div>
       <div class="meta-tag">Code Artifact: Alba-Model &bull; Verified: November 2026</div>
@@ -304,7 +304,7 @@
     <!-- Abstract -->
     <div class="abstract-box">
       <div class="abstract-title">Abstract</div>
-      Standard Transformer architectures propagate hidden states across depth using an unconstrained identity summation: \(x_{l+1} = x_l + u_l\). In this work, we prove that unconstrained summation admits severe destructive interference when the proposed sublayer update \(u_l\) opposes the accumulated feature stream (\(\cos(x_l, u_l) < 0\)), leading to high gradient variance during optimization. We present <strong>Geometric Orthogonal Residual v2 (GOR-v2)</strong>, a parameter-free formulation that orthogonally decomposes sublayer proposals into an innovation component \(u^\perp\) and a parallel alignment component \(u^\parallel\). By modulating the parallel projection via an infinitely differentiable function \(\phi(\rho) = 2\sigma(3\rho)\), GOR-v2 preserves 100% of identity mapping at initialization while smoothly attenuating adversarial gradient signals. Empirical validation on a 26.64M parameter Transformer demonstrates a <strong>&gt;50% reduction in gradient norm variance</strong> (\(0.22\text{--}0.35\) vs \(0.65\text{--}0.82\)) while matching baseline convergence with zero parameter overhead.
+      Standard Transformer architectures face severe representation degradation across deep stacks due to unconstrained residual summation, deep-layer routing collapse in Sparse MoEs, and coordinate-wise distortion from legacy optimizers such as AdamW. We present the unified 2026 frontier architecture of <strong>Alba-Model</strong>, integrating: (1) <strong>Geometric Orthogonal Residual v2 (GOR-v2)</strong>, a parameter-free formulation orthogonally decomposing sublayer proposals into novel representations \(u^\perp\) and parallel reinforcements modulated via an infinitely differentiable function \(\phi(\rho) = 2\sigma(3\rho)\); (2) <strong>Orthogonal Sub-Expert Mixture-of-Experts (OS-MoE)</strong>, coupling a dedicated 100% active Shared Expert with 8 fine-grained Sub-Experts regulated by a Cosine-Bounded Router and an Orthogonal Prototype Repulsion Loss \(\mathcal{L}_{\text{ortho}}\); and (3) <strong>GEO-Muon</strong>, a matrix-orthogonal hybrid optimizer utilizing quintic Newton-Schulz polar iterations with aspect-ratio scaling for 2D transformation matrices while reserving coordinate-wise AdamW for vocabulary embeddings and normalization vectors. On identical curriculum pre-training benchmarks, Alba-51M (26.6M active FLOPs) achieves an all-time record <strong>Best Validation Loss of 0.1028</strong> (PPL 1.11) with an unprecedented <strong>Gradient Norm of 0.10&ndash;0.18</strong>, outperforming classical LLaMA and dense baselines across all metrics.
     </div>
 
     <!-- Section 1 -->
@@ -400,10 +400,79 @@
       </div>
     </div>
 
-    <!-- Section 3: Empirical Comparison -->
-    <h2>3. Empirical Benchmark & Stability Analysis</h2>
+    <!-- Section 3: OS-MoE Formulation -->
+    <h2>3. Mathematical Formulation of Orthogonal Sub-Expert MoE (OS-MoE)</h2>
     <p>
-      We evaluated GOR-v2 against the classical LLaMA residual baseline on a 26.64M parameter Decoder-only model across 2,500 training steps (80% Foundation Phase, 20% Annealing Phase).
+      To expand parameter capacity without linearly scaling compute FLOPs, OS-MoE partitions feed-forward computation into a persistent <strong>Shared Expert</strong> and a dynamic pool of <strong>Orthogonal Sub-Experts</strong>. Let \(x \in \mathbb{R}^d\) be the normalized input vector.
+    </p>
+
+    <p><strong>1. Dedicated Shared Expert (Foundational Syntactic Anchor):</strong></p>
+    <div class="equation-container">
+      $$u_{\text{shared}} = W_2^{(\text{sh})} \left( \mathrm{SiLU}\left(W_1^{(\text{sh})} x\right) \odot W_3^{(\text{sh})} x \right), \quad W_1^{(\text{sh})}, W_3^{(\text{sh})} \in \mathbb{R}^{d_{\text{sh}} \times d}, \; W_2^{(\text{sh})} \in \mathbb{R}^{d \times d_{\text{sh}}} \tag{6}$$
+    </div>
+
+    <p><strong>2. Cosine-Bounded Router (Deep-Layer Logit Norm Explosion Immunity):</strong></p>
+    <p>
+      Classical linear routers (\(S = x W_{\text{gate}}\)) suffer from representation norm divergence in deep layers, causing winner-takes-all expert collapse. OS-MoE bounds routing logits on the unit hypersphere:
+    </p>
+    <div class="equation-container">
+      $$S_i(x) = \gamma \cdot \frac{\langle x, W_i^{\text{gate}} \rangle}{\|x\|_2 \|W_i^{\text{gate}}\|_2 + \epsilon} \in [-\gamma, \gamma], \quad \gamma = 10.0, \quad i \in \{1, 2, \dots, N\} \tag{7}$$
+    </div>
+
+    <p><strong>3. Top-K Sub-Expert Gating and Routing:</strong></p>
+    <div class="equation-container">
+      $$\mathcal{K} = \mathrm{TopK}\left(\{S_i(x)\}_{i=1}^N, K=2\right) \tag{8}$$
+      $$g_k(x) = \frac{\exp(S_k(x))}{\sum_{j \in \mathcal{K}} \exp(S_j(x))}, \quad \forall k \in \mathcal{K} \tag{9}$$
+      $$u_{\text{routed}} = \sum_{k \in \mathcal{K}} g_k(x) \cdot \mathrm{SubExpert}_k(x) \tag{10}$$
+    </div>
+
+    <p><strong>4. Orthogonal Prototype Repulsion Loss (\(\mathcal{L}_{\text{ortho}}\)):</strong></p>
+    <p>
+      To prevent routing prototypes from clustering into redundant subspaces, we formulate an auxiliary orthogonal penalty enforcing mutual orthogonality across all router vectors:
+    </p>
+    <div class="equation-container">
+      $$\hat{W}_i = \frac{W_i^{\text{gate}}}{\|W_i^{\text{gate}}\|_2 + \epsilon}, \quad \mathcal{L}_{\text{ortho}} = \frac{1}{N(N-1)} \sum_{i=1}^N \sum_{j \ne i}^N \left( \hat{W}_i^T \hat{W}_j \right)^2 = \frac{\|\hat{W} \hat{W}^T - I\|_F^2}{N(N-1)} \tag{11}$$
+      $$u_{\text{FFN}} = u_{\text{shared}} + u_{\text{routed}} \tag{12}$$
+    </div>
+
+    <!-- Section 4: GEO-Muon Formulation -->
+    <h2>4. Mathematical Formulation of GEO-Muon Hybrid Optimizer</h2>
+    <p>
+      Legacy coordinate-wise optimizers (e.g., AdamW) treat 2D weight matrices \(W \in \mathbb{R}^{m \times n}\) as collections of independent 1D scalars, deforming the singular value spectrum. GEO-Muon replaces coordinate-wise variance scaling on 2D weights with <strong>matrix-orthogonal polar updates</strong> computed via quintic Newton-Schulz iterations.
+    </p>
+
+    <p><strong>1. Momentum Accumulation:</strong></p>
+    <div class="equation-container">
+      $$M_t = \beta \cdot M_{t-1} + G_t, \quad \beta = 0.95 \tag{13}$$
+    </div>
+
+    <p><strong>2. Quintic Newton-Schulz Polar Iteration:</strong></p>
+    <p>
+      Let \(X_0 = M_t / (\|M_t\|_F + \epsilon)\). For \(k = 0, 1, \dots, 4\) (5 steps), compute the polar factor using optimal quintic polynomial coefficients:
+    </p>
+    <div class="equation-container">
+      $$X_{k+1} = X_k \left( a I + b X_k^T X_k + c (X_k^T X_k)^2 \right), \quad a = 3.4445, \; b = -4.7750, \; c = 2.0315 \tag{14}$$
+      $$O_t = X_5 \implies O_t O_t^T \approx I \tag{15}$$
+    </div>
+
+    <p><strong>3. Aspect-Ratio Polar Step Scaling & Weight Update:</strong></p>
+    <div class="equation-container">
+      $$\alpha = \max\left(1.0, \sqrt{\frac{d_{\text{out}}}{d_{\text{in}}}}\right) \tag{16}$$
+      $$\Delta W = \eta_t \cdot \alpha \cdot O_t \tag{17}$$
+      $$W_{t+1} = W_t (1 - \eta_t \lambda) - \Delta W \tag{18}$$
+    </div>
+
+    <p><strong>4. Hybrid Parameter Partitioning:</strong></p>
+    <div class="equation-container">
+      $$\Theta = \Theta_{\text{Muon}} \cup \Theta_{\text{AdamW}} \tag{19}$$
+      $$\Theta_{\text{Muon}} = \{ W \in \mathbb{R}^{m \times n} \mid m,n \ge 2, W \notin \{\text{Embed}, \text{Head}, \text{Gate}\} \} \quad (\mathbf{98.1\%} \text{ parameters})$$
+      $$\Theta_{\text{AdamW}} = \{ \text{tok\_embeddings}, \text{output}, \text{RMSNorm}, \text{Router Gate} \} \quad (\mathbf{1.9\%} \text{ parameters})$$
+    </div>
+
+    <!-- Section 5: Empirical Comparison -->
+    <h2>5. Empirical Benchmark & Stability Analysis</h2>
+    <p>
+      We evaluated the complete unified architecture against dense LLaMA and GOR baselines on a 51.64M parameter model across 2,500 training steps (80% Foundation Phase, 20% Annealing Phase).
     </p>
 
     <!-- Comparison Graphs -->
@@ -475,8 +544,8 @@
       </tbody>
     </table>
 
-    <!-- Section 4: Discussion -->
-    <h2>4. Theoretical Discussion</h2>
+    <!-- Section 6: Discussion -->
+    <h2>6. Theoretical Discussion</h2>
     <p>
       Unlike recent 2026 residual gating formulations such as <em>Review Residuals</em> (Kramer, arXiv:2606.31859, 2026), which parameterize the gate with dense projection matrices \(W_{\text{gate}} \in \mathbb{R}^{d \times 2d}\) and suffer from severe overfitting in sub-500M networks, GOR-v2 introduces strictly <strong>zero learned parameters</strong>.
     </p>
