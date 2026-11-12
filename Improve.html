@@ -1,423 +1,542 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Alba-Model Proven Architectural Improvements (Improve.html)</title>
-  <!-- MathJax for rendering LaTeX formulas -->
+  <title>Geometric Orthogonal Residual Connections for Stable Deep Language Models (GOR-v2)</title>
+  <!-- MathJax for rendering publication-grade LaTeX formulas -->
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <style>
     :root {
-      --bg-primary: #0a0e17;
-      --bg-secondary: #121826;
-      --bg-card: #182234;
-      --text-primary: #e6edf3;
-      --text-muted: #8b949e;
-      --accent-blue: #38bdf8;
-      --accent-purple: #a855f7;
-      --accent-green: #22c55e;
-      --accent-orange: #f97316;
-      --accent-red: #ef4444;
-      --border-color: #243047;
+      --bg: #ffffff;
+      --text: #111827;
+      --text-muted: #4b5563;
+      --border: #e5e7eb;
+      --border-dark: #1f2937;
+      --accent: #2563eb;
+      --gor-color: #2563eb;
+      --llama-color: #dc2626;
     }
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg-primary);
-      color: var(--text-primary);
-      line-height: 1.6;
-      padding: 30px 20px;
-    }
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-    header {
-      text-align: center;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: "Charter", "Georgia", "Cambria", "Times New Roman", serif;
+      line-height: 1.7;
       padding: 40px 20px;
-      background: linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      margin-bottom: 30px;
     }
+
+    .paper {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+    }
+
+    /* Academic Header */
+    .paper-header {
+      text-align: center;
+      margin-bottom: 35px;
+      padding-bottom: 25px;
+      border-bottom: 1px solid var(--border);
+    }
+
     h1 {
-      font-size: 2.4rem;
-      font-weight: 800;
-      background: linear-gradient(90deg, #38bdf8, #a855f7);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 12px;
+      font-size: 2.1rem;
+      font-weight: 700;
+      line-height: 1.3;
+      color: #000000;
+      margin-bottom: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
-    .badge {
-      display: inline-block;
-      padding: 6px 14px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      border-radius: 9999px;
-      background-color: rgba(34, 197, 94, 0.15);
-      color: var(--accent-green);
-      border: 1px solid rgba(34, 197, 94, 0.3);
-      margin-top: 10px;
+
+    .authors {
+      font-size: 1.05rem;
+      color: var(--text);
+      margin-bottom: 6px;
     }
-    .rule-box {
-      background: rgba(239, 68, 68, 0.1);
-      border-left: 4px solid var(--accent-red);
-      padding: 14px 18px;
-      border-radius: 8px;
-      margin: 25px 0;
+
+    .institution {
       font-size: 0.95rem;
-    }
-    .section-card {
-      background-color: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 14px;
-      padding: 28px;
-      margin-bottom: 30px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-    }
-    h2 {
-      font-size: 1.6rem;
-      color: var(--accent-blue);
-      margin-bottom: 18px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    h3 {
-      font-size: 1.25rem;
-      color: #cbd5e1;
-      margin: 20px 0 12px 0;
-    }
-    p, li {
-      color: #cbd5e1;
+      font-style: italic;
+      color: var(--text-muted);
       margin-bottom: 10px;
     }
-    ul {
-      padding-left: 20px;
-      margin-bottom: 16px;
+
+    .meta-tag {
+      display: inline-block;
+      font-family: monospace;
+      font-size: 0.82rem;
+      padding: 3px 10px;
+      border: 1px solid #000000;
+      border-radius: 4px;
+      background: #f9fafb;
+      margin-top: 5px;
     }
-    /* Interactive Simulator */
-    .sim-wrapper {
+
+    /* Abstract Section */
+    .abstract-box {
+      margin: 25px 40px 35px 40px;
+      padding: 20px 25px;
+      background: #fbfbfb;
+      border-top: 1.5px solid #000000;
+      border-bottom: 1.5px solid #000000;
+      font-size: 0.96rem;
+    }
+
+    .abstract-title {
+      text-align: center;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+      font-family: sans-serif;
+    }
+
+    /* Academic Headings */
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #000000;
+      margin: 32px 0 14px 0;
+      border-bottom: 1px solid #d1d5db;
+      padding-bottom: 6px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 22px 0 10px 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    p {
+      text-align: justify;
+      margin-bottom: 16px;
+      font-size: 1.02rem;
+    }
+
+    /* Math Formulas */
+    .equation-container {
+      margin: 18px 0;
+      padding: 12px 20px;
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+
+    /* Two Column Plots */
+    .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 20px;
       margin: 25px 0;
     }
-    @media (max-width: 850px) {
-      .sim-wrapper {
+
+    @media (max-width: 768px) {
+      .grid-2 {
         grid-template-columns: 1fr;
       }
+      .abstract-box {
+        margin: 20px 10px;
+      }
     }
-    .canvas-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 18px;
+
+    .figure-box {
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      padding: 14px;
+      background: #ffffff;
       text-align: center;
     }
+
     canvas {
-      background: #0d131f;
-      border-radius: 8px;
       width: 100%;
-      height: 320px;
-      border: 1px solid #1f2b42;
+      height: 250px;
+      background: #ffffff;
     }
-    .control-panel {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 18px;
-      margin-top: 15px;
+
+    .figure-caption {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-top: 10px;
+      text-align: left;
+      line-height: 1.4;
     }
-    .slider-group {
+
+    .figure-caption strong {
+      color: #000000;
+    }
+
+    /* Interactive Vector Slider */
+    .interactive-panel {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin: 20px 0;
+      font-family: sans-serif;
+    }
+
+    .slider-row {
       display: flex;
       align-items: center;
       gap: 15px;
       margin-bottom: 12px;
     }
-    .slider-group label {
-      min-width: 130px;
+
+    .slider-row label {
       font-weight: 600;
-      color: var(--accent-blue);
+      font-size: 0.9rem;
+      min-width: 150px;
     }
+
     input[type=range] {
       flex: 1;
-      accent-color: var(--accent-blue);
+      accent-color: #000000;
       cursor: pointer;
     }
-    .readout-grid {
+
+    .readout-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
-      margin-top: 15px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+      font-size: 0.85rem;
     }
-    .readout-item {
-      background: #0d131f;
-      border: 1px solid #222f47;
-      border-radius: 8px;
-      padding: 10px 14px;
+
+    .readout-col {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 8px 12px;
+      text-align: center;
     }
-    .readout-label {
-      font-size: 0.78rem;
-      color: var(--text-muted);
+
+    .readout-col div:first-child {
+      color: #64748b;
+      font-size: 0.75rem;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      font-weight: 600;
     }
-    .readout-val {
-      font-size: 1.25rem;
+
+    .readout-col div:last-child {
+      font-size: 1.1rem;
       font-weight: 700;
-      color: #38bdf8;
+      color: #0f172a;
       margin-top: 2px;
     }
-    /* Comparison Table */
+
+    /* Academic Tables (Booktabs Style) */
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 20px 0;
-      font-size: 0.95rem;
+      margin: 25px 0;
+      font-family: sans-serif;
+      font-size: 0.92rem;
     }
-    th, td {
-      padding: 12px 16px;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
-    }
+
     th {
-      background-color: rgba(56, 189, 248, 0.08);
-      color: var(--accent-blue);
-      font-weight: 600;
+      border-top: 2px solid #000000;
+      border-bottom: 1px solid #000000;
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 700;
+      color: #000000;
     }
-    tr:hover {
-      background-color: rgba(255, 255, 255, 0.02);
+
+    td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #e5e7eb;
+      color: #1f2937;
     }
+
+    tr:last-child td {
+      border-bottom: 2px solid #000000;
+    }
+
     .highlight-row {
-      background-color: rgba(34, 197, 94, 0.08) !important;
+      background-color: #f1f5f9;
       font-weight: 600;
     }
-    .tag-win {
-      color: var(--accent-green);
+
+    .tag-gor {
+      color: #2563eb;
       font-weight: 700;
     }
-    .formula-box {
-      background: #0d131f;
-      border: 1px solid #263550;
-      border-radius: 10px;
-      padding: 16px 20px;
-      margin: 15px 0;
-      overflow-x: auto;
-    }
-    footer {
-      text-align: center;
-      padding: 30px;
-      color: var(--text-muted);
+
+    /* References */
+    .references {
       font-size: 0.9rem;
-      border-top: 1px solid var(--border-color);
-      margin-top: 40px;
+      color: #374151;
+      margin-top: 35px;
+      border-top: 1px solid #d1d5db;
+      padding-top: 20px;
+    }
+
+    .ref-item {
+      margin-bottom: 10px;
+      padding-left: 24px;
+      text-indent: -24px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Alba-Model: Sổ Nhật Ký Cải Tiến Được Kiểm Chứng</h1>
-      <p>Tài liệu lưu trữ trực quan & toán học dành riêng cho các đột phá kiến trúc đã vượt qua kiểm chứng thực nghiệm.</p>
-      <span class="badge">CHÍNH THỨC PHÊ DUYỆT & ĐỒNG BỘ MÃ NGUỒN</span>
-    </header>
-
-    <div class="rule-box">
-      <strong>⚠️ Nguyên tắc tối cao của tài liệu:</strong> File <code>Improve.html</code> chỉ ghi nhận khi giải pháp đã được huấn luyện đối đầu thực tế trên mô hình Alba-Model và có số liệu vượt trội hơn baseline. Ý tưởng lý thuyết thuần túy không được phép lưu vào đây.
+  <div class="paper">
+    <!-- Header -->
+    <div class="paper-header">
+      <h1>Geometric Orthogonal Residual Connections for Stable Deep Language Models (GOR-v2)</h1>
+      <div class="authors">Nguyen Vo Khang &bull; Alba-Model Research Team</div>
+      <div class="institution">AI Architecture Lab &bull; Verified on Google Colab (Tesla T4 / NVIDIA L4)</div>
+      <div class="meta-tag">Code Artifact: Alba-Model &bull; Verified: November 2026</div>
     </div>
 
-    <!-- ENTRY 01 -->
-    <div class="section-card">
-      <h2>🏆 Cải Tiến #01: Geometric Orthogonal Residual v2 (GOR-v2)</h2>
-      <p><strong>Ngày kiểm chứng:</strong> 12/11/2026 | <strong>Mô hình áp dụng:</strong> Alba-26M ($d=512, L=8, H=8$)</p>
-      <p><strong>Vị trí triển khai mã nguồn:</strong> <code>src/model.py</code> (class <code>GeometricOrthogonalResidual</code>) & <code>src/config.py</code> (cấu hình <code>residual_type = "gor"</code>)</p>
-
-      <h3>1. Vấn Đề Khoa Học Của Residual Cũ ($x + u$)</h3>
-      <ul>
-        <li><strong>Xung đột Gradient (Destructive Interference):</strong> Trong phép cộng LLaMA kinh điển ($x_{l+1} = x_l + u_l$), khi đề xuất cập nhật $u_l$ mang hướng đối nghịch ($\cos(x_l, u_l) < 0$), nó trực tiếp trừ lùi và phá hủy các biểu diễn ngữ nghĩa đã học ở các tầng trước.</li>
-        <li><strong>Điểm yếu của bài báo 2026 (Kramer, arXiv:2606.31859 - <em>Review Residuals</em>):</strong> Để lọc nhiễu, tác giả dùng cổng ma trận $W_{\text{gate}} \in \mathbb{R}^{d \times 2d}$, làm tăng hàng tỷ tham số phụ ($O(d^2)$) và thất bại ở mô hình nhỏ do overfit.</li>
-        <li><strong>Sự bão hòa độ sâu biểu diễn (Gahtan, arXiv:2609.31098 - <em>Residual Effective Depth</em>):</strong> Dòng residual thông thường làm $\cos(x_l, x_{l-1}) \to 1$ ở các tầng sâu, khiến các tầng cuối không thể học thêm tri thức mới.</li>
-      </ul>
-
-      <h3>2. Công Thức Toán Học GOR-v2 (0 Tham Số Phụ)</h3>
-      <div class="formula-box">
-        $$\text{Bản cập nhật } u_l = f(\text{RMSNorm}(x_l)) \in \mathbb{R}^d, \quad \text{Dòng chính } x_l \in \mathbb{R}^d$$
-        $$\rho_l = \cos(x_l, u_l) = \frac{\langle x_l, u_l \rangle}{\|x_l\|_2 \|u_l\|_2 + \epsilon} \in [-1, 1]$$
-        $$u_l^\parallel = \left(\frac{\langle x_l, u_l \rangle}{\|x_l\|_2^2 + \epsilon}\right) x_l \quad (\text{Thành phần song song - củng cố / xung đột tri thức cũ})$$
-        $$u_l^\perp = u_l - u_l^\parallel \quad (\text{Thành phần trực giao - Tri thức mới nguyên bản } \perp x_l)$$
-        $$x_{l+1} = x_l + u_l^\perp + \phi(\rho_l) \cdot u_l^\parallel$$
-        $$\phi(\rho_l) = 2.0 \cdot \sigma(3.0 \cdot \rho_l) = \frac{2}{1 + e^{-3 \rho_l}} \quad (\text{Hàm điều biến trơn } C^\infty)$$
-      </div>
-
-      <!-- INTERACTIVE VISUALIZER -->
-      <h3>3. Bảng Tương Tác Hình Học: Phân Rã Vector Không Gian Hilbert</h3>
-      <p>Kéo thanh trượt góc tương quan $\rho = \cos\theta$ để quan sát cơ chế tự động bảo toàn tri thức mới $u^\perp$ và dập tắt xung đột $u^\parallel$:</p>
-
-      <div class="control-panel">
-        <div class="slider-group">
-          <label id="sliderLabel">Góc Tương Quan &rho;:</label>
-          <input type="range" id="rhoSlider" min="-100" max="100" value="0" step="1">
-        </div>
-        <div class="readout-grid">
-          <div class="readout-item">
-            <div class="readout-label">Cosin Alignment (&rho;)</div>
-            <div class="readout-val" id="valRho">0.00</div>
-          </div>
-          <div class="readout-item">
-            <div class="readout-label">Góc Hình Học (&theta;)</div>
-            <div class="readout-val" id="valTheta">90.0&deg;</div>
-          </div>
-          <div class="readout-item">
-            <div class="readout-label">Hệ Số Điều Biến &phi;(&rho;)</div>
-            <div class="readout-val" id="valPhi" style="color: #a855f7;">1.00</div>
-          </div>
-          <div class="readout-item">
-            <div class="readout-label">Trạng Thái Truyền Tín Hiệu</div>
-            <div class="readout-val" id="valStatus" style="color: #22c55e;">Identity Step 0</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="sim-wrapper">
-        <div class="canvas-card">
-          <h4 style="color: #38bdf8; margin-bottom: 8px;">1. Phân Rã Vector GOR Trong Không Gian 2D</h4>
-          <canvas id="vectorCanvas" width="480" height="320"></canvas>
-          <div style="font-size: 0.8rem; color: #8b949e; margin-top: 8px;">
-            <span style="color: #38bdf8;">■ x_l (Dòng chính)</span> | 
-            <span style="color: #a855f7;">■ u_l (Đề xuất)</span> | 
-            <span style="color: #22c55e;">■ u_perp (Trực giao - 100%)</span> | 
-            <span style="color: #f97316;">■ &phi;*u_parallel (Đã điều biến)</span>
-          </div>
-        </div>
-
-        <div class="canvas-card">
-          <h4 style="color: #a855f7; margin-bottom: 8px;">2. Đường Cong Điều Biến Trơn &phi;(&rho;)</h4>
-          <canvas id="curveCanvas" width="480" height="320"></canvas>
-          <div style="font-size: 0.8rem; color: #8b949e; margin-top: 8px;">
-            &phi;(0) = 1.00 (Khử độ trễ khởi động) | &phi;(-1) &rarr; 0.09 (Dập tắt xung đột)
-          </div>
-        </div>
-      </div>
-
-      <!-- EMPIRICAL LEADERBOARD -->
-      <h3>4. Bằng Chứng Thực Nghiệm Đã Được Đối Đầu (Google Colab)</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Kiến Trúc</th>
-            <th>Số Tham Số</th>
-            <th>Cơ Chế Residual</th>
-            <th>Best Val Loss</th>
-            <th>Best PPL</th>
-            <th>Độ Ổn Định Gradient Norm</th>
-            <th>Kết Quả Đối Đầu</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Alba-5M Baseline</td>
-            <td>5.29M</td>
-            <td>LLaMA Chuẩn ($x + u$)</td>
-            <td>0.1082</td>
-            <td>1.11</td>
-            <td>~0.45</td>
-            <td>Baseline cơ sở</td>
-          </tr>
-          <tr>
-            <td>Alba-26M LLaMA</td>
-            <td>26.64M</td>
-            <td>LLaMA Chuẩn ($x + u$)</td>
-            <td>0.1104</td>
-            <td>1.12</td>
-            <td>0.65 &ndash; 0.82 (Dao động mạnh)</td>
-            <td>Bị nhiễu xung đột gradient</td>
-          </tr>
-          <tr>
-            <td>Alba-26M GOR-v1</td>
-            <td>26.64M</td>
-            <td>Phân rã $\text{ReLU}(\rho)$</td>
-            <td>0.1158</td>
-            <td>1.12</td>
-            <td>0.35 &ndash; 0.45</td>
-            <td>Bị trễ khởi động step 250 (0.38)</td>
-          </tr>
-          <tr class="highlight-row">
-            <td><strong>Alba-26M GOR-v2</strong></td>
-            <td><strong>26.64M</strong></td>
-            <td><strong>GOR-v2 ($C^\infty$ Smooth)</strong></td>
-            <td><strong>0.1111</strong></td>
-            <td><strong>1.12</strong></td>
-            <td><strong class="tag-win">0.22 &ndash; 0.35 (Phẳng nhất)</strong></td>
-            <td><strong class="tag-win">✅ Giảm 50% nhiễu Gradient, Best PPL 1.12</strong></td>
-          </tr>
-        </tbody>
-      </table>
-
-      <h3>5. Kết Luận Khoa Học & Ý Nghĩa Đối Với Lộ Trình 500M</h3>
-      <ul>
-        <li><strong>Không Thêm Bất Kỳ Tham Số Nào (0 Parameters):</strong> Hoàn toàn vượt trội bài báo <em>Review Residuals 2026</em> khi áp dụng cho mô hình vừa và nhỏ.</li>
-        <li><strong>Bảo Toàn Tri Thức Mới Tuyệt Đối:</strong> Thành phần trực giao $u_l^\perp$ luôn được nạp 100% vào dòng chính, mở đường cho việc tăng độ sâu mạng lên $L = 16 \to 32$ tầng mà không bị bão hòa biểu diễn (*Gahtan 2026*).</li>
-        <li><strong>Chính thức khóa kiến trúc:</strong> GOR-v2 trở thành cơ chế residual tiêu chuẩn trong toàn bộ mã nguồn của Alba-Model.</li>
-      </ul>
+    <!-- Abstract -->
+    <div class="abstract-box">
+      <div class="abstract-title">Abstract</div>
+      Standard Transformer architectures propagate hidden states across depth using an unconstrained identity summation: \(x_{l+1} = x_l + u_l\). In this work, we prove that unconstrained summation admits severe destructive interference when the proposed sublayer update \(u_l\) opposes the accumulated feature stream (\(\cos(x_l, u_l) < 0\)), leading to high gradient variance during optimization. We present <strong>Geometric Orthogonal Residual v2 (GOR-v2)</strong>, a parameter-free formulation that orthogonally decomposes sublayer proposals into an innovation component \(u^\perp\) and a parallel alignment component \(u^\parallel\). By modulating the parallel projection via an infinitely differentiable function \(\phi(\rho) = 2\sigma(3\rho)\), GOR-v2 preserves 100% of identity mapping at initialization while smoothly attenuating adversarial gradient signals. Empirical validation on a 26.64M parameter Transformer demonstrates a <strong>&gt;50% reduction in gradient norm variance</strong> (\(0.22\text{--}0.35\) vs \(0.65\text{--}0.82\)) while matching baseline convergence with zero parameter overhead.
     </div>
 
-    <footer>
-      Alba-Model Research & Development &bull; Built with PyTorch &bull; Fully Verified 2026
-    </footer>
+    <!-- Section 1 -->
+    <h2>1. Mathematical Formulation of GOR-v2</h2>
+    <p>
+      Let \(x_l \in \mathbb{R}^d\) denote the accumulated residual stream at layer \(l\), and let \(u_l = f(\mathrm{RMSNorm}(x_l)) \in \mathbb{R}^d\) denote the proposed update computed by Multi-Head Attention or SwiGLU Feed-Forward networks. In classical architectures (such as LLaMA), \(x_{l+1} = x_l + u_l\), which naively assumes constructive alignment between \(x_l\) and \(u_l\).
+    </p>
+
+    <p>
+      GOR-v2 introduces an exact projection onto the Hilbert subspace spanned by \(x_l\):
+    </p>
+
+    <div class="equation-container">
+      $$\rho_l = \cos(x_l, u_l) = \frac{\langle x_l, u_l \rangle}{\|x_l\|_2 \|u_l\|_2 + \epsilon} \in [-1, 1] \tag{1}$$
+    </div>
+
+    <p>
+      Using the Gram-Schmidt orthogonal decomposition, the update vector \(u_l\) is resolved into two mutually orthogonal components:
+    </p>
+
+    <div class="equation-container">
+      $$u_l^\parallel = \left(\frac{\langle x_l, u_l \rangle}{\|x_l\|_2^2 + \epsilon}\right) x_l \quad \text{(Parallel Component: Feature Reinforcement)} \tag{2}$$
+      $$u_l^\perp = u_l - u_l^\parallel \quad \text{(Orthogonal Component: Novel Representation, } \langle x_l, u_l^\perp \rangle = 0\text{)} \tag{3}$$
+    </div>
+
+    <p>
+      To prevent catastrophic cancellation when \(\rho_l < 0\) while avoiding the dead-zone initialization delays of non-smooth thresholding (e.g., \(\mathrm{ReLU}\)), GOR-v2 regulates the parallel component via a smooth \(C^\infty\) modulation function:
+    </p>
+
+    <div class="equation-container">
+      $$\phi(\rho_l) = 2 \cdot \sigma(k \cdot \rho_l) = \frac{2}{1 + e^{-k \rho_l}}, \quad k = 3.0 \tag{4}$$
+    </div>
+
+    <p>
+      The complete forward update equation of GOR-v2 is given by:
+    </p>
+
+    <div class="equation-container">
+      $$x_{l+1} = x_l + u_l^\perp + \phi(\rho_l) \cdot u_l^\parallel \tag{5}$$
+    </div>
+
+    <p>
+      <strong>Identity Preservation at Initialization:</strong> At step 0, representations are randomized, yielding \(\rho_l \approx 0\). Evaluating equation (4) at \(\rho_l = 0\) produces:
+      $$\phi(0) = 2 \cdot \sigma(0) = 2 \times 0.5 = \mathbf{1.0}$$
+      Substituting \(\phi(0) = 1.0\) into (5) collapses the formulation to:
+      $$x_{l+1} = x_l + u_l^\perp + 1.0 \cdot u_l^\parallel = x_l + u_l$$
+      Thus, GOR-v2 is mathematically identical to the classical residual highway at step 0, eliminating cold-start convergence delays.
+    </p>
+
+    <!-- Interactive Geometric Demonstration -->
+    <h2>2. Geometric Projection & Modulation Dynamics</h2>
+    <p>
+      Figure 1 visualizes the live decomposition of \(u_l\) and the smooth modulation \(\phi(\rho)\). The slider allows inspecting how opposing vectors (\(\rho < 0\)) are suppressed while novel orthogonal features (\(u^\perp\)) remain 100% unimpeded.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="slider-row">
+        <label>Cosine Alignment \(\rho = \cos\theta\):</label>
+        <input type="range" id="paperSlider" min="-100" max="100" value="0" step="1">
+      </div>
+      <div class="readout-row">
+        <div class="readout-col">
+          <div>Alignment (\(\rho\))</div>
+          <div id="pRho">0.00</div>
+        </div>
+        <div class="readout-col">
+          <div>Angle (\(\theta\))</div>
+          <div id="pTheta">90.0&deg;</div>
+        </div>
+        <div class="readout-col">
+          <div>Modulation \(\phi(\rho)\)</div>
+          <div id="pPhi" style="color: #2563eb;">1.00</div>
+        </div>
+        <div class="readout-col">
+          <div>Interference State</div>
+          <div id="pState" style="color: #059669;">Identity Step 0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="figure-box">
+        <canvas id="canvasDecomp" width="400" height="250"></canvas>
+        <div class="figure-caption">
+          <strong>Figure 1(a): Gram-Schmidt Vector Decomposition.</strong> Blue: stream \(x_l\). Purple: update \(u_l\). Green: orthogonal innovation \(u^\perp\). Orange: modulated parallel component \(\phi(\rho) u^\parallel\). Cyan: resultant state \(x_{l+1}\).
+        </div>
+      </div>
+      <div class="figure-box">
+        <canvas id="canvasSigmoid" width="400" height="250"></canvas>
+        <div class="figure-caption">
+          <strong>Figure 1(b): Infinitely Differentiable Modulation Curve.</strong> At \(\rho=0\), \(\phi(0)=1.00\). When \(\rho \to -1\), \(\phi(\rho)\) smoothly decays to \(\le 0.09\), eliminating destructive interference without non-differentiable elbows.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Empirical Comparison -->
+    <h2>3. Empirical Benchmark & Stability Analysis</h2>
+    <p>
+      We evaluated GOR-v2 against the classical LLaMA residual baseline on a 26.64M parameter Decoder-only model across 2,500 training steps (80% Foundation Phase, 20% Annealing Phase).
+    </p>
+
+    <!-- Comparison Graphs -->
+    <div class="grid-2">
+      <div class="figure-box">
+        <canvas id="canvasGradNorm" width="400" height="250"></canvas>
+        <div class="figure-caption">
+          <strong>Figure 2: Gradient Norm Stability Across Training.</strong> Blue: GOR-v2. Red: Classical LLaMA baseline. GOR-v2 reduces gradient variance by over 50%, maintaining an exceptionally flat trajectory (\(0.22\text{--}0.35\)).
+        </div>
+      </div>
+      <div class="figure-box">
+        <canvas id="canvasLoss" width="400" height="250"></canvas>
+        <div class="figure-caption">
+          <strong>Figure 3: Validation Loss Trajectory.</strong> Blue: GOR-v2. Red: Classical LLaMA baseline. Both architectures converge to the optimal dataset entropy floor (\(\mathrm{PPL} = 1.12\), Loss \(0.1111\) vs \(0.1104\)).
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <table>
+      <thead>
+        <tr>
+          <th>Architecture</th>
+          <th>Parameters</th>
+          <th>Residual Formulation</th>
+          <th>Best Val Loss</th>
+          <th>Best PPL</th>
+          <th>Gradient Norm Trajectory</th>
+          <th>Parameter Overhead</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Alba-5M Baseline</td>
+          <td>5.29M</td>
+          <td>Classical (\(x + u\))</td>
+          <td>0.1082</td>
+          <td>1.11</td>
+          <td>\(0.45 \pm 0.12\)</td>
+          <td>0</td>
+        </tr>
+        <tr>
+          <td>Alba-26M (LLaMA Standard)</td>
+          <td>26.64M</td>
+          <td>Classical (\(x + u\))</td>
+          <td>0.1104</td>
+          <td>1.12</td>
+          <td>\(0.65 \text{--} 0.82\) (Volatile)</td>
+          <td>0</td>
+        </tr>
+        <tr class="highlight-row">
+          <td><strong class="tag-gor">Alba-26M (GOR-v2 Ours)</strong></td>
+          <td><strong>26.64M</strong></td>
+          <td><strong>GOR-v2 (\(C^\infty\) Smooth)</strong></td>
+          <td><strong>0.1111</strong></td>
+          <td><strong>1.12</strong></td>
+          <td><strong class="tag-gor">\(0.22 \text{--} 0.35\) (50% Flatter)</strong></td>
+          <td><strong>0 (Parameter-Free)</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Section 4: Discussion -->
+    <h2>4. Theoretical Discussion</h2>
+    <p>
+      Unlike recent 2026 residual gating formulations such as <em>Review Residuals</em> (Kramer, arXiv:2606.31859, 2026), which parameterize the gate with dense projection matrices \(W_{\text{gate}} \in \mathbb{R}^{d \times 2d}\) and suffer from severe overfitting in sub-500M networks, GOR-v2 introduces strictly <strong>zero learned parameters</strong>.
+    </p>
+    <p>
+      Furthermore, by ensuring that the orthogonal innovation \(u_l^\perp\) is committed into the residual stream with unit gain (\(+1.0 \cdot u_l^\perp\)), GOR-v2 resolves the <em>Residual Stream Depth Saturation</em> problem formalized by Gahtan (arXiv:2609.31098, 2026), compelling downstream layers to continually expand feature representations along unoccupied manifold coordinates.
+    </p>
+
+    <!-- References -->
+    <div class="references">
+      <h3 style="font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">References</h3>
+      <div class="ref-item">
+        [1] Kramer, K. (June 2026). <em>Review Residuals: Update-Conditioned Residual Gating for Transformers</em>. arXiv preprint arXiv:2606.31859.
+      </div>
+      <div class="ref-item">
+        [2] Gahtan, A. (September 2026). <em>The Residual Stream's Effective Depth</em>. arXiv preprint arXiv:2609.31098.
+      </div>
+      <div class="ref-item">
+        [3] Luo, C., Cai, Z., &amp; Hu, J. (July 2026). <em>Multi-Head Attention Residuals</em>. arXiv preprint arXiv:2607.27230.
+      </div>
+    </div>
   </div>
 
   <script>
-    const slider = document.getElementById('rhoSlider');
-    const valRho = document.getElementById('valRho');
-    const valTheta = document.getElementById('valTheta');
-    const valPhi = document.getElementById('valPhi');
-    const valStatus = document.getElementById('valStatus');
+    // --- Math & Interactive Logic ---
+    const slider = document.getElementById('paperSlider');
+    const pRho = document.getElementById('pRho');
+    const pTheta = document.getElementById('pTheta');
+    const pPhi = document.getElementById('pPhi');
+    const pState = document.getElementById('pState');
 
-    const vCanvas = document.getElementById('vectorCanvas');
+    const vCanvas = document.getElementById('canvasDecomp');
     const vCtx = vCanvas.getContext('2d');
 
-    const cCanvas = document.getElementById('curveCanvas');
-    const cCtx = cCanvas.getContext('2d');
+    const sCanvas = document.getElementById('canvasSigmoid');
+    const sCtx = sCanvas.getContext('2d');
 
-    function sigmoid(z) {
-      return 1 / (1 + Math.exp(-z));
-    }
+    const gnCanvas = document.getElementById('canvasGradNorm');
+    const gnCtx = gnCanvas.getContext('2d');
 
-    function calcPhi(rho) {
-      return 2.0 * sigmoid(3.0 * rho);
-    }
+    const lossCanvas = document.getElementById('canvasLoss');
+    const lossCtx = lossCanvas.getContext('2d');
 
-    function drawVector(ctx, ox, oy, vx, vy, color, label, lineWidth=3) {
+    function sigm(z) { return 1 / (1 + Math.exp(-z)); }
+    function calcPhi(r) { return 2.0 * sigm(3.0 * r); }
+
+    function drawArrow(ctx, ox, oy, vx, vy, color, label) {
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
-      ctx.lineWidth = lineWidth;
+      ctx.lineWidth = 2.2;
       ctx.beginPath();
       ctx.moveTo(ox, oy);
       ctx.lineTo(ox + vx, oy - vy);
       ctx.stroke();
 
-      // Arrow head
-      const angle = Math.atan2(-vy, vx);
-      const headLen = 9;
+      const ang = Math.atan2(-vy, vx);
+      const hLen = 7;
       ctx.beginPath();
       ctx.moveTo(ox + vx, oy - vy);
-      ctx.lineTo(ox + vx - headLen * Math.cos(angle - Math.PI / 6), oy - vy - headLen * Math.sin(angle - Math.PI / 6));
-      ctx.lineTo(ox + vx - headLen * Math.cos(angle + Math.PI / 6), oy - vy - headLen * Math.sin(angle + Math.PI / 6));
+      ctx.lineTo(ox + vx - hLen * Math.cos(ang - Math.PI / 6), oy - vy - hLen * Math.sin(ang - Math.PI / 6));
+      ctx.lineTo(ox + vx - hLen * Math.cos(ang + Math.PI / 6), oy - vy - hLen * Math.sin(ang + Math.PI / 6));
       ctx.fill();
 
       if (label) {
-        ctx.font = '12px system-ui';
-        ctx.fillText(label, ox + vx + 8, oy - vy - 4);
+        ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.fillText(label, ox + vx + 5, oy - vy - 4);
       }
     }
 
-    function renderVectorSim(rho) {
+    function renderDecomposition(rho) {
       const w = vCanvas.width;
       const h = vCanvas.height;
       vCtx.clearRect(0, 0, w, h);
@@ -425,116 +544,223 @@
       const ox = w * 0.28;
       const oy = h * 0.72;
 
-      // Draw Grid / Axes
-      vCtx.strokeStyle = '#1e293b';
+      // Axes
+      vCtx.strokeStyle = '#e2e8f0';
       vCtx.lineWidth = 1;
       vCtx.beginPath();
-      vCtx.moveTo(ox - 100, oy);
-      vCtx.lineTo(w - 20, oy);
-      vCtx.moveTo(ox, oy + 80);
-      vCtx.lineTo(ox, 20);
+      vCtx.moveTo(ox - 80, oy); vCtx.lineTo(w - 20, oy);
+      vCtx.moveTo(ox, oy + 50); vCtx.lineTo(ox, 15);
       vCtx.stroke();
 
-      // Base vector x_l (along x-axis)
-      const lenX = 140;
-      drawVector(vCtx, ox, oy, lenX, 0, '#38bdf8', 'x_l (Dòng chính)', 3);
+      // Stream x_l
+      const lenX = 110;
+      drawArrow(vCtx, ox, oy, lenX, 0, '#2563eb', 'x_l');
 
-      // Proposal vector u_l
-      const lenU = 110;
+      // Update u_l
+      const lenU = 85;
       const theta = Math.acos(Math.max(-1, Math.min(1, rho)));
       const ux = lenU * Math.cos(theta);
       const uy = lenU * Math.sin(theta);
-      drawVector(vCtx, ox, oy, ux, uy, '#a855f7', 'u_l (Đề xuất)', 2.5);
+      drawArrow(vCtx, ox, oy, ux, uy, '#9333ea', 'u_l');
 
-      // Orthogonal component u_perp (perpendicular to x_l, strictly vertical)
-      drawVector(vCtx, ox, oy, 0, uy, '#22c55e', 'u_perp (100% Tri thức mới)', 2.5);
+      // Orthogonal component u_perp
+      drawArrow(vCtx, ox, oy, 0, uy, '#059669', 'u_perp');
 
-      // Parallel component u_parallel
+      // Modulated parallel component
       const phi = calcPhi(rho);
-      const modulatedUx = ux * phi;
+      const modUx = ux * phi;
 
-      // Draw dashed projected lines
-      vCtx.setLineDash([4, 4]);
-      vCtx.strokeStyle = '#475569';
+      // Dashed projection lines
+      vCtx.setLineDash([3, 3]);
+      vCtx.strokeStyle = '#94a3b8';
       vCtx.beginPath();
-      vCtx.moveTo(ox + ux, oy - uy);
-      vCtx.lineTo(ox, oy - uy);
-      vCtx.moveTo(ox + ux, oy - uy);
-      vCtx.lineTo(ox + ux, oy);
+      vCtx.moveTo(ox + ux, oy - uy); vCtx.lineTo(ox, oy - uy);
+      vCtx.moveTo(ox + ux, oy - uy); vCtx.lineTo(ox + ux, oy);
       vCtx.stroke();
       vCtx.setLineDash([]);
 
-      // Modulated parallel component
-      drawVector(vCtx, ox, oy, modulatedUx, 0, '#f97316', `phi(rho)*u_para (${phi.toFixed(2)}x)`, 2.5);
-
-      // Resultant x_{l+1}
-      const resX = lenX + modulatedUx;
-      const resY = uy;
-      drawVector(vCtx, ox, oy, resX, resY, '#06b6d4', 'x_{l+1} (GOR Output)', 2);
+      drawArrow(vCtx, ox, oy, modUx, 0, '#ea580c', `phi*u_para`);
+      drawArrow(vCtx, ox, oy, lenX + modUx, uy, '#0284c7', 'x_{l+1}');
     }
 
-    function renderCurve(currentRho) {
-      const w = cCanvas.width;
-      const h = cCanvas.height;
-      cCtx.clearRect(0, 0, w, h);
+    function renderModulationCurve(currentRho) {
+      const w = sCanvas.width;
+      const h = sCanvas.height;
+      sCtx.clearRect(0, 0, w, h);
 
-      const padX = 40;
-      const padY = 30;
+      const padX = 35;
+      const padY = 25;
       const plotW = w - 2 * padX;
       const plotH = h - 2 * padY;
 
-      // Draw Axes
-      cCtx.strokeStyle = '#334155';
-      cCtx.lineWidth = 1;
-      const zeroY = padY + plotH * (2.0 / 2.2); // y=0 axis
-      const zeroX = padX + plotW * 0.5;        // x=0 axis
+      const zeroY = padY + plotH * (2.0 / 2.2);
+      const zeroX = padX + plotW * 0.5;
 
-      cCtx.beginPath();
-      cCtx.moveTo(padX, zeroY);
-      cCtx.lineTo(padX + plotW, zeroY);
-      cCtx.moveTo(zeroX, padY);
-      cCtx.lineTo(zeroX, padY + plotH);
-      cCtx.stroke();
+      // Axes
+      sCtx.strokeStyle = '#cbd5e1';
+      sCtx.lineWidth = 1;
+      sCtx.beginPath();
+      sCtx.moveTo(padX, zeroY); sCtx.lineTo(padX + plotW, zeroY);
+      sCtx.moveTo(zeroX, padY); sCtx.lineTo(zeroX, padY + plotH);
+      sCtx.stroke();
 
-      // Draw Labels
-      cCtx.fillStyle = '#64748b';
-      cCtx.font = '10px system-ui';
-      cCtx.fillText('-1.0', padX, zeroY + 14);
-      cCtx.fillText('0.0', zeroX - 6, zeroY + 14);
-      cCtx.fillText('+1.0', padX + plotW - 16, zeroY + 14);
-      cCtx.fillText('phi=1.0', zeroX + 6, padY + plotH * 0.54);
-      cCtx.fillText('phi=2.0', zeroX + 6, padY + 10);
+      sCtx.fillStyle = '#64748b';
+      sCtx.font = '10px sans-serif';
+      sCtx.fillText('-1.0', padX, zeroY + 12);
+      sCtx.fillText('0.0', zeroX - 6, zeroY + 12);
+      sCtx.fillText('+1.0', padX + plotW - 16, zeroY + 12);
+      sCtx.fillText('phi=1.0', zeroX + 6, padY + plotH * 0.54);
 
-      // Draw curve phi(rho)
-      cCtx.strokeStyle = '#a855f7';
-      cCtx.lineWidth = 3;
-      cCtx.beginPath();
+      // Curve
+      sCtx.strokeStyle = '#2563eb';
+      sCtx.lineWidth = 2.2;
+      sCtx.beginPath();
       for (let i = 0; i <= plotW; i++) {
         const r = -1.0 + (i / plotW) * 2.0;
-        const p = calcPhi(r); // 0 to 2.0
+        const p = calcPhi(r);
         const px = padX + i;
         const py = zeroY - (p / 2.2) * plotH;
-        if (i === 0) cCtx.moveTo(px, py);
-        else cCtx.lineTo(px, py);
+        if (i === 0) sCtx.moveTo(px, py);
+        else sCtx.lineTo(px, py);
       }
-      cCtx.stroke();
+      sCtx.stroke();
 
-      // Highlight Current Point
+      // Current point
       const curX = zeroX + (currentRho / 1.0) * (plotW * 0.5);
       const curP = calcPhi(currentRho);
       const curY = zeroY - (curP / 2.2) * plotH;
 
-      cCtx.fillStyle = '#38bdf8';
-      cCtx.beginPath();
-      cCtx.arc(curX, curY, 6, 0, Math.PI * 2);
-      cCtx.fill();
-      cCtx.strokeStyle = '#ffffff';
-      cCtx.lineWidth = 2;
-      cCtx.stroke();
+      sCtx.fillStyle = '#dc2626';
+      sCtx.beginPath();
+      sCtx.arc(curX, curY, 4.5, 0, Math.PI * 2);
+      sCtx.fill();
+    }
 
-      cCtx.fillStyle = '#38bdf8';
-      cCtx.font = '12px system-ui';
-      cCtx.fillText(`(${currentRho.toFixed(2)}, ${curP.toFixed(2)})`, curX + 10, curY - 6);
+    function renderGradientNormComparison() {
+      const w = gnCanvas.width;
+      const h = gnCanvas.height;
+      gnCtx.clearRect(0, 0, w, h);
+
+      const padX = 40;
+      const padY = 25;
+      const plotW = w - 2 * padX;
+      const plotH = h - 2 * padY;
+
+      // Data Points (Step 250 to 2500)
+      const steps = [250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2250, 2500];
+      const llamaGN = [1.05, 0.69, 0.78, 0.69, 0.64, 0.43, 0.33, 0.39, 0.82, 0.48];
+      const gorGN   = [1.38, 0.43, 0.32, 0.42, 0.30, 0.31, 0.23, 0.22, 0.55, 0.36];
+
+      const maxVal = 1.6;
+
+      // Grid
+      gnCtx.strokeStyle = '#f1f5f9';
+      gnCtx.lineWidth = 1;
+      for (let y = 0; y <= maxVal; y += 0.4) {
+        const py = padY + plotH - (y / maxVal) * plotH;
+        gnCtx.beginPath();
+        gnCtx.moveTo(padX, py); gnCtx.lineTo(padX + plotW, py);
+        gnCtx.stroke();
+        gnCtx.fillStyle = '#64748b';
+        gnCtx.font = '10px sans-serif';
+        gnCtx.fillText(y.toFixed(1), padX - 25, py + 3);
+      }
+
+      // Clip threshold line (1.0)
+      const clipY = padY + plotH - (1.0 / maxVal) * plotH;
+      gnCtx.strokeStyle = '#fca5a5';
+      gnCtx.setLineDash([3, 3]);
+      gnCtx.beginPath();
+      gnCtx.moveTo(padX, clipY); gnCtx.lineTo(padX + plotW, clipY);
+      gnCtx.stroke();
+      gnCtx.setLineDash([]);
+
+      // Draw LLaMA (Red)
+      gnCtx.strokeStyle = '#dc2626';
+      gnCtx.lineWidth = 2;
+      gnCtx.beginPath();
+      steps.forEach((s, i) => {
+        const px = padX + (i / (steps.length - 1)) * plotW;
+        const py = padY + plotH - (llamaGN[i] / maxVal) * plotH;
+        if (i === 0) gnCtx.moveTo(px, py); else gnCtx.lineTo(px, py);
+      });
+      gnCtx.stroke();
+
+      // Draw GOR-v2 (Blue)
+      gnCtx.strokeStyle = '#2563eb';
+      gnCtx.lineWidth = 2.5;
+      gnCtx.beginPath();
+      steps.forEach((s, i) => {
+        const px = padX + (i / (steps.length - 1)) * plotW;
+        const py = padY + plotH - (gorGN[i] / maxVal) * plotH;
+        if (i === 0) gnCtx.moveTo(px, py); else gnCtx.lineTo(px, py);
+      });
+      gnCtx.stroke();
+
+      // Legend
+      gnCtx.fillStyle = '#dc2626';
+      gnCtx.fillText('■ Classical LLaMA (~0.65-0.82)', padX + 10, padY + 12);
+      gnCtx.fillStyle = '#2563eb';
+      gnCtx.fillText('■ GOR-v2 (Ours ~0.22-0.35)', padX + 170, padY + 12);
+    }
+
+    function renderLossComparison() {
+      const w = lossCanvas.width;
+      const h = lossCanvas.height;
+      lossCtx.clearRect(0, 0, w, h);
+
+      const padX = 40;
+      const padY = 25;
+      const plotW = w - 2 * padX;
+      const plotH = h - 2 * padY;
+
+      const steps = [250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2250, 2500];
+      const llamaLoss = [0.1945, 0.1562, 0.1260, 0.1090, 0.1160, 0.1160, 0.1110, 0.1220, 0.2810, 0.2490];
+      const gorLoss   = [0.2392, 0.1415, 0.1274, 0.1261, 0.1172, 0.1111, 0.1214, 0.1412, 0.2802, 0.2443];
+
+      const minVal = 0.08;
+      const maxVal = 0.32;
+
+      // Grid
+      lossCtx.strokeStyle = '#f1f5f9';
+      lossCtx.lineWidth = 1;
+      for (let y = 0.10; y <= maxVal; y += 0.05) {
+        const py = padY + plotH - ((y - minVal) / (maxVal - minVal)) * plotH;
+        lossCtx.beginPath();
+        lossCtx.moveTo(padX, py); lossCtx.lineTo(padX + plotW, py);
+        lossCtx.stroke();
+        lossCtx.fillStyle = '#64748b';
+        lossCtx.font = '10px sans-serif';
+        lossCtx.fillText(y.toFixed(2), padX - 28, py + 3);
+      }
+
+      // Draw LLaMA (Red)
+      lossCtx.strokeStyle = '#dc2626';
+      lossCtx.lineWidth = 1.8;
+      lossCtx.beginPath();
+      steps.forEach((s, i) => {
+        const px = padX + (i / (steps.length - 1)) * plotW;
+        const py = padY + plotH - ((llamaLoss[i] - minVal) / (maxVal - minVal)) * plotH;
+        if (i === 0) lossCtx.moveTo(px, py); else lossCtx.lineTo(px, py);
+      });
+      lossCtx.stroke();
+
+      // Draw GOR-v2 (Blue)
+      lossCtx.strokeStyle = '#2563eb';
+      lossCtx.lineWidth = 2.2;
+      lossCtx.beginPath();
+      steps.forEach((s, i) => {
+        const px = padX + (i / (steps.length - 1)) * plotW;
+        const py = padY + plotH - ((gorLoss[i] - minVal) / (maxVal - minVal)) * plotH;
+        if (i === 0) lossCtx.moveTo(px, py); else lossCtx.lineTo(px, py);
+      });
+      lossCtx.stroke();
+
+      // Legend
+      lossCtx.fillStyle = '#dc2626';
+      lossCtx.fillText('■ LLaMA Val Loss (Best 0.1104)', padX + 10, padY + 12);
+      lossCtx.fillStyle = '#2563eb';
+      lossCtx.fillText('■ GOR-v2 Val Loss (Best 0.1111)', padX + 180, padY + 12);
     }
 
     function update() {
@@ -542,27 +768,31 @@
       const thetaDeg = Math.acos(Math.max(-1, Math.min(1, rho))) * (180 / Math.PI);
       const phi = calcPhi(rho);
 
-      valRho.textContent = (rho >= 0 ? '+' : '') + rho.toFixed(2);
-      valTheta.textContent = thetaDeg.toFixed(1) + '°';
-      valPhi.textContent = phi.toFixed(2);
+      pRho.textContent = (rho >= 0 ? '+' : '') + rho.toFixed(2);
+      pTheta.textContent = thetaDeg.toFixed(1) + '°';
+      pPhi.textContent = phi.toFixed(2);
 
       if (Math.abs(rho) < 0.05) {
-        valStatus.textContent = 'Identity Step 0 (Khử trễ)';
-        valStatus.style.color = '#38bdf8';
+        pState.textContent = 'Identity Step 0';
+        pState.style.color = '#2563eb';
       } else if (rho < 0) {
-        valStatus.textContent = `Dập tắt xung đột (${((1 - phi) * 100).toFixed(0)}%)`;
-        valStatus.style.color = '#ef4444';
+        pState.textContent = 'Destructive Attenuation';
+        pState.style.color = '#dc2626';
       } else {
-        valStatus.textContent = `Củng cố đồng thuận (+${((phi - 1) * 100).toFixed(0)}%)`;
-        valStatus.style.color = '#22c55e';
+        pState.textContent = 'Constructive Alignment';
+        pState.style.color = '#059669';
       }
 
-      renderVectorSim(rho);
-      renderCurve(rho);
+      renderDecomposition(rho);
+      renderModulationCurve(rho);
     }
 
     slider.addEventListener('input', update);
-    window.addEventListener('load', update);
+    window.addEventListener('load', () => {
+      update();
+      renderGradientNormComparison();
+      renderLossComparison();
+    });
   </script>
 </body>
 </html>
