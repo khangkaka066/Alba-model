@@ -83,20 +83,21 @@ Alba-Model abandons legacy Transformer constructs (e.g., standard LayerNorm, abs
 
 ### Model Architectural Variants & Hyperparameters:
 
-| Variant | Parameters | Layers ($L$) | Hidden Dim ($d$) | Heads ($H$) | SwiGLU Dim | Best Val Loss | Best Val PPL | Throughput (T4) |
-|---|---|---|---|---|---|---|---|---|
-| **Alba-5M (Compact Baseline)** | `5,290,496` (~5.29M) | 6 | 256 | 4 | 688 | **0.1082** | **1.11** | ~64,055 tok/s |
-| **Alba-26M (Scaled Frontier)** | `26,639,360` (~26.64M) | 8 | 512 | 8 | 1,376 | **0.1104** | **1.12** | ~77,274 tok/s |
+| Variant | Parameters | Layers ($L$) | Hidden Dim ($d$) | Heads ($H$) | SwiGLU Dim | Residual Connection | Best Val Loss | Best Val PPL | Gradient Norm |
+|---|---|---|---|---|---|---|---|---|---|
+| **Alba-5M (Compact Baseline)** | `5,290,496` (~5.29M) | 6 | 256 | 4 | 688 | Standard ($x + u$) | **0.1082** | **1.11** | ~0.45 |
+| **Alba-26M (Standard LLaMA)** | `26,639,360` (~26.64M) | 8 | 512 | 8 | 1,376 | Standard ($x + u$) | **0.1104** | **1.12** | ~0.65 - 0.80 |
+| **Alba-26M (GOR-v2 Innovation)** | `26,639,360` (~26.64M) | 8 | 512 | 8 | 1,376 | **Geometric Orthogonal v2** | **0.1111** | **1.12** | **~0.25 - 0.35 (50% Flatter)** |
 
 ### 📊 Empirical Training Dashboards & Benchmark Comparison:
 
-| Alba-5M Dashboard (~5.29M) | Alba-26M Dashboard (~26.64M) |
+| Alba-26M Standard LLaMA | Alba-26M GOR-v2 Innovation |
 |---|---|
-| <img src="checkpoints/modern_transformer_llama_dashboard.png" width="480" alt="Alba-5M Dashboard" /> | <img src="checkpoints/modern_transformer_llama_26M_dashboard.png" width="480" alt="Alba-26M Dashboard" /> |
+| <img src="checkpoints/modern_transformer_llama_26M_dashboard.png" width="480" alt="Alba-26M Standard Dashboard" /> | <img src="checkpoints/modern_transformer_gor_26M_dashboard.jpg" width="480" alt="Alba-26M GOR-v2 Dashboard" /> |
 
-#### Head-to-Head Architecture Comparison Benchmark:
+#### Head-to-Head Architecture Comparison Benchmark (Standard vs GOR-v2):
 <p align="center">
-  <img src="checkpoints/comparison_5M_vs_26M.png" width="850" alt="Alba-Model Benchmark Comparison" />
+  <img src="checkpoints/comparison_standard_vs_gor_26M.png" width="850" alt="Alba-Model Benchmark Comparison" />
 </p>
 
 ---
