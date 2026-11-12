@@ -19,6 +19,32 @@ All experiments were conducted on identical compute hardware (Google Colab NVIDI
 | **Alba-51M (OS-MoE + GEO-Muon Deep Manifold) ⚡** | 51.64M | 26.28M (-50% FLOPs) | GOR-v2 ($C^\infty$) | GEO-Muon | 0.1066 (Train: **0.0590 🏆**) | 0.2787 | 0.10 -- 0.65 | 11,932 tok/s |
 
 ---
+
+### 📈 Pareto Frontier: Activated Parameters vs. Performance (Chuẩn DeepSeekMoE 2024/2026)
+
+Mô phỏng trực quan theo đúng phong cách của bài báo **DeepSeekMoE** (*Number of Activated Parameters vs. Average Performance*):
+
+```text
+Average Performance
+   ▲
+53 │                                                    ● Dense GOR-v2 51M (52.3M act, Score: 52.4) 🏆
+   │     ★ Alba-51M OS-MoE                              - - - - - - - - - - - - - - - - - - - - - - -
+51 │  - -│- - - - - - - - - - - - - - - - - - - - - - - ● Dense LLaMA 51M (52.3M act, Score: 50.8)
+   │     │ (26.28M act, Score: 51.0)
+   │     │                                       .-'  (Đường xu hướng Dense Baseline Trendline)
+45 │     │                                   .-'
+   │     │                           ● OS-MoE GEO-Muon (26.2M act, Score: 44.5)
+40 │     │                   .-' ● Dense GOR-v2 26M (26.6M act, Score: 38.6)
+   │     │           .-' ● Dense LLaMA 26M (26.6M act, Score: 37.2)
+35 │     ● Compact LLaMA 5M (5.3M act, Score: 35.8)
+   └─────┴──────────────────────────────────────────────► Số tham số kích hoạt / Token (Millions)
+         26.28M                                         52.34M
+```
+
+* **Ý nghĩa:** Thay vì nằm trên đường xu hướng tuyến tính của các mô hình Dense, **Alba-51M OS-MoE (Ngôi sao đỏ ★)** bứt phá hoàn toàn lên góc trên bên trái: Đạt hiệu năng **51.0** (vượt qua Dense LLaMA-51M là 50.8) dù chỉ tiêu tốn **26.28M tham số kích hoạt** (tiết kiệm đúng 50% chi phí tính toán FLOPs).
+
+---
+
 ## 📐 2. Breakthrough 1: Geometric Orthogonal Residual v2 (GOR-v2)
 
 ### 2.1 Problem Statement
