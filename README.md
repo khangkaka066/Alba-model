@@ -16,7 +16,7 @@
 
 ## 📑 Table of Contents
 
-- [🏆 Proven Improvements Ledger (Improve.md)](Improve.md)
+- [🏆 Proven Improvements Visual Ledger (Improve.html)](Improve.html)
 - [Architectural Highlights](#-architectural-highlights)
 - [Two-Stage Pre-training Curriculum](#-two-stage-pre-training-curriculum)
 - [Byte-Level BPE (BBPE) Tokenizer](#-byte-level-bpe-bbpe-tokenizer)
