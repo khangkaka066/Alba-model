@@ -427,6 +427,13 @@
         Substituting $\phi(0) = 1.00$ into (5) collapses the formulation to $x_{l+1} = x_l + u_l^\perp + 1.0 \cdot u_l^\parallel = x_l + u_l$. Consequently, GOR-v2 preserves 100% of the classical residual highway at step 0, introducing zero cold-start latency and zero learned parameters.
       </p>
 
+      <div class="figure-box full-width" style="text-align: center; margin-top: 18px; margin-bottom: 24px;">
+        <img src="figures/gor_v2_architecture.png" alt="Architectural Comparison: Classical vs GOR-v2 Residual Block" style="max-width: 100%; height: auto; border: 1px solid #cbd5e1; border-radius: 4px;">
+        <div class="figure-caption">
+          <strong>Fig. 2. Structural Architecture Comparison of Residual Highway Blocks.</strong> (a) Classical Pre-LN Transformer residual block (He et al., 2016; Vaswani et al., 2017) with simple element-wise bypass addition $x_{l+1} = x_l + u_l$, which suffers from collinear update accumulation and representation collapse in deep layers ($\mathcal{D}_{\mathrm{eff}} \approx 37\%$). (b) Geometric Orthogonal Residual Block (GOR-v2), introducing a Hilbert Space Orthogonal Decomposition Engine that projects updates into orthogonal innovation $u_l^\perp$ with unit gain and infinitely differentiable parallel modulation $\phi(\rho_l) u_l^\parallel$, mathematically guaranteeing $\langle x_l, u_l^\perp \rangle = 0$ and boosting effective depth utilization to $\mathcal{D}_{\mathrm{eff}} = 54.4\%$ with strictly zero learned parameters.
+        </div>
+      </div>
+
       <!-- SECTION III -->
       <h2 class="ieee-heading">III. Orthogonal Sub-MoE (OS-MoE)</h2>
 

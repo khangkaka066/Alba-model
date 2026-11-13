@@ -98,6 +98,8 @@ $$u_l = u_l^\parallel + u_l^\perp$$
 * **Destructive Damping:** When $\rho_l \to -1$, $\phi(\rho_l) \le 0.09$, asymptotically dampening destructive updates without non-differentiable gradient elbows.
 * **Zero Learned Parameters:** Pure differential geometry with 0 parameter overhead.
 
+![Fig. 2: Architectural Comparison: Classical vs GOR-v2 Residual Block](figures/gor_v2_architecture.png)
+
 ---
 
 ## 🧩 3. Breakthrough 2: Orthogonal Sub-Expert Mixture-of-Experts (OS-MoE)
