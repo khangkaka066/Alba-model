@@ -1,129 +1,254 @@
-\documentclass[tikz,border=15pt]{standalone}
+\documentclass[tikz,border=25pt]{standalone}
 \usepackage{amsmath,amssymb}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
 \usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit,backgrounds,calc}
 
 \begin{document}
 \begin{tikzpicture}[
     >=Stealth,
     font=\sffamily,
-    token/.style={draw=black!25, fill=black!4, rounded corners=2pt, minimum width=0.8cm, minimum height=0.45cm, font=\small\itshape},
-    head/.style={draw=green!50!black, fill=green!15, rounded corners=4pt, minimum width=4.5cm, minimum height=0.7cm, font=\bfseries\small},
-    block/.style={draw=yellow!60!black, fill=yellow!15, rounded corners=5pt, minimum width=4.5cm, minimum height=3.5cm},
-    norm/.style={draw=black!50, fill=white, rounded corners=3pt, minimum width=1.8cm, minimum height=0.5cm, font=\footnotesize},
-    loss/.style={draw=orange!80!black, fill=orange!15, rounded corners=3pt, minimum width=3.5cm, minimum height=0.6cm, font=\bfseries\small},
-    frame/.style={draw=blue!70!black, dashed, rounded corners=8pt, line width=1pt}
+    % DeepSeek-V3 Style Palette & Geometry
+    token/.style={
+        draw=black!35,
+        fill=black!5,
+        rounded corners=3pt,
+        minimum width=0.85cm,
+        minimum height=0.55cm,
+        font=\small\itshape,
+        line width=0.6pt
+    },
+    head/.style={
+        draw=green!60!black,
+        fill=green!16,
+        rounded corners=4pt,
+        minimum width=4.8cm,
+        minimum height=0.75cm,
+        font=\bfseries\small,
+        line width=0.8pt,
+        text=green!25!black
+    },
+    blockcard/.style={
+        draw=orange!75!black,
+        fill=yellow!12,
+        rounded corners=6pt,
+        minimum width=5.0cm,
+        minimum height=4.2cm,
+        line width=0.8pt
+    },
+    norm/.style={
+        draw=black!45,
+        fill=white,
+        rounded corners=3pt,
+        minimum width=2.4cm,
+        minimum height=0.6cm,
+        font=\footnotesize,
+        line width=0.7pt
+    },
+    loss/.style={
+        draw=orange!80!black,
+        fill=orange!18,
+        rounded corners=4pt,
+        minimum width=4.2cm,
+        minimum height=0.75cm,
+        font=\bfseries\small,
+        line width=0.8pt,
+        text=orange!30!black
+    },
+    frame/.style={
+        draw=blue!75!black,
+        dashed,
+        rounded corners=8pt,
+        line width=1.1pt
+    }
 ]
 
-    % ==================== MAIN MODEL (LEFT) ====================
-    % Input Tokens
-    \node[token] (t1) at (0, 0) {$t_1$};
-    \node[token] (t2) at (1.1, 0) {$t_2$};
-    \node[token] (t3) at (2.2, 0) {$t_3$};
-    \node[token] (t4) at (3.3, 0) {$t_4$};
-    \node[left=0.3cm of t1, font=\bfseries\itshape\small] {Input Tokens};
+    % =========================================================================
+    % PANEL 1: ALBA FOUNDATION MODEL (LEFT)
+    % =========================================================================
 
-    % Embedding
-    \node[head, above=0.7cm of $(t2)!0.5!(t3)$] (emb) {Embedding Layer (Shared)};
-    \draw[->, thick] (t1.north) -- (t1.north |- emb.south);
-    \draw[->, thick] (t2.north) -- (t2.north |- emb.south);
-    \draw[->, thick] (t3.north) -- (t3.north |- emb.south);
-    \draw[->, thick] (t4.north) -- (t4.north |- emb.south);
+    % Input Tokens at the bottom (Y = 0)
+    \coordinate (baseL) at (0, 0);
+    \node[token] (t1) at ($(baseL)+(-1.35, 0)$) {$t_1$};
+    \node[token] (t2) at ($(baseL)+(-0.45, 0)$) {$t_2$};
+    \node[token] (t3) at ($(baseL)+( 0.45, 0)$) {$t_3$};
+    \node[token] (t4) at ($(baseL)+( 1.35, 0)$) {$t_4$};
+    \node[left=0.4cm of t1, font=\bfseries\itshape\small, text=black!75] {Input Tokens};
 
-    % Stacked Transformer Cards
-    \node[block, fill=yellow!5, draw=black!20, above=0.7cm of emb, xshift=-0.2cm, yshift=0.2cm] (stack2) {};
-    \node[block, fill=yellow!10, draw=black!30, above=0.7cm of emb, xshift=-0.1cm, yshift=0.1cm] (stack1) {};
-    \node[block, above=0.7cm of emb] (mainblock) {};
-    \draw[->, thick] (emb) -- (mainblock);
+    % Embedding Layer (Y = 1.1)
+    \node[head] (emb) at (0, 1.1) {Embedding Layer (Shared)};
+    \draw[->, thick, line width=0.8pt] (t1.north) -- (t1.north |- emb.south);
+    \draw[->, thick, line width=0.8pt] (t2.north) -- (t2.north |- emb.south);
+    \draw[->, thick, line width=0.8pt] (t3.north) -- (t3.north |- emb.south);
+    \draw[->, thick, line width=0.8pt] (t4.north) -- (t4.north |- emb.south);
 
-    \node[font=\bfseries, color=yellow!40!black] at ($(mainblock.north)+(0,-0.4)$) {Alba Transformer Block $\times L$};
-    
-    % Internal Sub-blocks
-    \node[draw=blue!60!black, fill=blue!10, rounded corners=3pt, minimum width=3.8cm, minimum height=0.8cm, below=0.6cm of mainblock.north] (mha) {
+    % Stacked Transformer Block Cards (Center at Y = 4.1)
+    \coordinate (blockcenter) at (0, 4.1);
+    % Card 3 (back)
+    \node[blockcard, fill=yellow!4, draw=black!25] at ($(blockcenter)+(-0.25, 0.25)$) {};
+    % Card 2 (middle)
+    \node[blockcard, fill=yellow!8, draw=black!35] at ($(blockcenter)+(-0.12, 0.12)$) {};
+    % Card 1 (front)
+    \node[blockcard] (mainblock) at (blockcenter) {};
+    \draw[->, thick, line width=0.9pt] (emb.north) -- (mainblock.south);
+
+    % Block Header
+    \node[font=\bfseries\small, color=orange!40!black] at ($(mainblock.north)+(0, -0.42)$) {Alba Transformer Block $\times L$};
+
+    % Internal Sub-modules inside the front card
+    \node[draw=blue!60!black, fill=blue!10, rounded corners=4pt, minimum width=4.3cm, minimum height=0.95cm, line width=0.7pt] 
+        (mha) at ($(mainblock.north)+(0, -1.3)$) {
         \begin{tabular}{c}
-            \textbf{\footnotesize Multi-Head Attention} \\
-            \scriptsize + GOR-v2 Orthogonal Highway ($u^\perp$)
+            \textbf{\footnotesize Multi-Head Attention (GOR-v2)} \\
+            \scriptsize Direct Orthogonal Projection ($u_l^\perp$)
         \end{tabular}
     };
-    \node[draw=purple!60!black, fill=purple!10, rounded corners=3pt, minimum width=3.8cm, minimum height=1.1cm, below=0.3cm of mha] (moe) {
+
+    \node[draw=purple!60!black, fill=purple!10, rounded corners=4pt, minimum width=4.3cm, minimum height=1.35cm, line width=0.7pt] 
+        (moe) at ($(mainblock.north)+(0, -2.75)$) {
         \begin{tabular}{c}
             \textbf{\footnotesize OS-MoE Feed-Forward Layer} \\
-            \scriptsize 1 Shared + 8 Sub-Experts (Top-2) \\
-            \scriptsize + GOR-v2 Orthogonal Highway ($u^\perp$)
+            \scriptsize 1 Shared Expert + 8 Sub-Experts (Top-2) \\
+            \scriptsize + Cosine-Bounded Router ($\rho_{\mathrm{gate}}$)
         \end{tabular}
     };
-    \draw[->, thick] (mha) -- (moe);
+    \draw[->, thick, line width=0.8pt] (mha) -- (moe);
 
-    % Output Head
-    \node[head, above=0.7cm of mainblock] (head) {Output Head (Shared)};
-    \draw[->, thick] (mainblock) -- (head);
+    % Output Head (Center at Y = 7.1)
+    \node[head] (head) at (0, 7.1) {Output Head (Shared)};
+    \draw[->, thick, line width=0.9pt] (mainblock.north) -- (head.south);
 
-    % Loss
-    \node[loss, above=0.6cm of head] (loss) {Cross-Entropy Loss};
-    \draw[->, thick] (head) -- (loss);
-    \draw[->, thick] (loss.east) -- ++(0.6, 0) node[right, font=\bfseries] {$\mathcal{L}_{\mathrm{Main}}$};
+    % Dashed Outer Frame for Left Panel (Top at Y = 9.3)
+    \draw[frame] (-2.9, 0.55) rectangle (2.9, 9.3);
+    
+    % Panel Title placed tightly on left side with generous clearance from the center arrow
+    \node[anchor=north west] at (-2.82, 9.18) {
+        \begin{tabular}{@{}l@{}}
+            \textbf{\normalsize\color{blue!90!black} Alba Model} \\
+            \scriptsize\itshape\color{gray!75!black} Next-Token \\
+            \scriptsize\itshape\color{gray!75!black} Prediction \\
+            \scriptsize\itshape\color{gray!75!black} (GOR-v2)
+        \end{tabular}
+    };
 
-    % Target Tokens
-    \node[token, above=0.5cm of loss, xshift=-1.2cm] (tg2) {$t_2$};
-    \node[token, above=0.5cm of loss, xshift=-0.4cm] (tg3) {$t_3$};
-    \node[token, above=0.5cm of loss, xshift=0.4cm] (tg4) {$t_4$};
-    \node[token, above=0.5cm of loss, xshift=1.2cm] (tg5) {$t_5$};
-    \draw[->, thick] (tg2) -- (tg2 |- loss.north);
-    \draw[->, thick] (tg3) -- (tg3 |- loss.north);
-    \draw[->, thick] (tg4) -- (tg4 |- loss.north);
-    \draw[->, thick] (tg5) -- (tg5 |- loss.north);
-    \node[left=0.3cm of tg2, font=\bfseries\itshape\small] {Target Tokens};
+    % Cross-Entropy Loss (OUTSIDE and ABOVE the dashed box at Y = 10.3)
+    \node[loss] (loss) at (0, 10.3) {Cross-Entropy Loss};
+    \draw[->, thick, line width=0.9pt] (head.north) -- (loss.south);
+    \draw[->, thick, line width=0.9pt] (loss.east) -- ++(0.7, 0) node[right, font=\bfseries\normalsize] {$\mathcal{L}_{\mathrm{Main}}$};
 
-    % Dashed Outer Frame
-    \begin{scope}[on background layer]
-        \node[frame, fit=(emb)(mainblock)(head), inner sep=0.4cm] (boxmain) {};
-        \node[above right, font=\bfseries, color=blue!80!black] at (boxmain.north west) {Alba Foundation Model};
-        \node[below right, font=\scriptsize\itshape, color=black!60] at ($(boxmain.north west)+(0,-0.3)$) {(Next-Token Prediction with GOR-v2 \& OS-MoE)};
+    % Target Tokens at the top (Y = 11.5)
+    \node[token] (tg2) at (-1.35, 11.5) {$t_2$};
+    \node[token] (tg3) at (-0.45, 11.5) {$t_3$};
+    \node[token] (tg4) at ( 0.45, 11.5) {$t_4$};
+    \node[token] (tg5) at ( 1.35, 11.5) {$t_5$};
+    \draw[->, thick, line width=0.8pt] (tg2.south) -- (tg2.south |- loss.north);
+    \draw[->, thick, line width=0.8pt] (tg3.south) -- (tg3.south |- loss.north);
+    \draw[->, thick, line width=0.8pt] (tg4.south) -- (tg4.south |- loss.north);
+    \draw[->, thick, line width=0.8pt] (tg5.south) -- (tg5.south |- loss.north);
+    \node[left=0.4cm of tg2, font=\bfseries\itshape\small, text=black!75] {Target Tokens};
+
+
+    % =========================================================================
+    % PANEL 2: DETAILED GOR-v2 RESIDUAL BLOCK (RIGHT)
+    % =========================================================================
+    \begin{scope}
+        \def\cx{10.3}
+        \def\skipx{6.0}
+
+        % Input Stream x_l (Y = 1.1)
+        \node[draw=blue!90!black, fill=blue!90!black, text=white, rounded corners=4pt, 
+              minimum width=3.2cm, minimum height=0.75cm, font=\bfseries\small] (inx) at (\cx, 1.1) {Input Stream $x_l$};
+
+        % Base Highway branching left cleanly from inx at Y = 1.1
+        \draw[thick, line width=1.1pt, color=blue!85!black] (inx.west) -- (\skipx, 1.1);
+
+        % RMSNorm(x_l) directly above inx at Y = 2.3 (Zero slanted arrows!)
+        \node[norm] (rnorm) at (\cx, 2.3) {$\mathrm{RMSNorm}(x_l)$};
+        \draw[->, thick, line width=0.9pt] (inx.north) -- (rnorm.south);
+
+        % Core Block f_l(·) directly above rnorm at Y = 3.5
+        \node[draw=orange!75!black, fill=yellow!15, rounded corners=4pt, 
+              minimum width=3.6cm, minimum height=0.75cm, font=\bfseries\footnotesize] 
+              (core) at (\cx, 3.5) {Core Block $f_l(\cdot)$ (MHA / MoE)};
+        \draw[->, thick, line width=0.9pt] (rnorm.north) -- (core.south);
+
+        % Hilbert Space Decomposition Engine (Center at Y = 6.2, Height = 3.2cm, Width = 5.6cm)
+        \node[draw=teal!70!black, fill=teal!5, rounded corners=6pt, line width=0.9pt,
+              minimum width=5.6cm, minimum height=3.2cm] (hilbert) at (\cx, 6.2) {};
+        
+        % Arrow from Core Block to Hilbert Engine
+        \draw[->, thick, line width=1.1pt, color=orange!85!black] (core.north) -- (core.north |- hilbert.south) 
+            node[midway, right=0.15cm, font=\bfseries\small, color=orange!90!black] {$u_l$ (Update Proposal)};
+
+        % Header inside Hilbert Engine
+        \node[font=\bfseries\footnotesize, color=teal!30!black] at ($(hilbert.north)+(0, -0.35)$) 
+            {Hilbert Space Orthogonal Decomposition};
+
+        % Formula Box 1 inside Hilbert Engine (Projection)
+        \node[draw=teal!45!black, fill=white, rounded corners=3pt, minimum width=5.0cm, inner sep=5pt] 
+            at ($(hilbert.center)+(0, 0.38)$) {
+            \small
+            $\rho_l = \cos(x_l, u_l) = \frac{\langle x_l, u_l \rangle}{\|x_l\| \|u_l\|}, \quad
+             u_l^\parallel = \frac{\langle x_l, u_l \rangle}{\|x_l\|^2} x_l$
+        };
+
+        % Formula Box 2 inside Hilbert Engine (Orthogonal + Modulation)
+        \node[draw=green!60!black, fill=green!10, rounded corners=3pt, minimum width=5.0cm, inner sep=4pt] 
+            at ($(hilbert.center)+(0, -0.62)$) {
+            \small
+            \textbf{\color{green!40!black} $u_l^\perp = u_l - u_l^\parallel$} 
+            \quad \footnotesize $(\langle u_l^\perp, x_l \rangle = 0)$
+            \quad $\phi(\rho_l) = \frac{2}{1 + e^{-3\rho_l}}$
+        };
+
+        % Reference input to Hilbert Engine from Base Highway at Y = 6.2
+        \draw[->, dashed, thick, line width=0.9pt, color=blue!85!black] 
+            (\skipx, 6.2) -- (hilbert.west)
+            node[midway, above=0.06cm, font=\small\itshape, text=blue!85!black] {$x_l$};
+
+        % Summation Circle (Y = 8.7)
+        \node[draw=green!60!black, fill=green!20, circle, inner sep=3.5pt, font=\bfseries\large, 
+              line width=1.0pt] (add) at (\cx, 8.7) {$+$};
+
+        % Base Highway Vertical Run along \skipx = 6.0 from Y = 1.1 to Y = 8.7
+        \draw[thick, line width=1.1pt, color=blue!85!black] (\skipx, 1.1) -- (\skipx, 8.7);
+        \node[font=\bfseries\scriptsize, color=blue!85!black, rotate=90] 
+            at ($(\skipx - 0.28, 4.2)$) {Base Highway $x_l$};
+        % Base Highway enters Summation Junction from West
+        \draw[->, thick, line width=1.1pt, color=blue!85!black] (\skipx, 8.7) -- (add.west);
+
+        % Orthogonal Innovation branch enters Summation Junction from South
+        \draw[->, thick, line width=1.1pt, color=green!50!black] 
+            (\cx, 7.8) -- (add.south)
+            node[midway, left=0.1cm, font=\scriptsize\bfseries, color=green!40!black] {$+1.0 \cdot u_l^\perp$};
+
+        % Modulated Parallel branch leaves Hilbert right and enters Summation Junction from East
+        \draw[->, thick, line width=1.1pt, color=orange!85!black] 
+            ($(\cx + 2.0, 7.8)$) -- ($(\cx + 2.0, 8.7)$) 
+            node[midway, right=0.08cm, font=\scriptsize\bfseries, color=orange!85!black] {$\phi(\rho_l) \cdot u_l^\parallel$}
+            -- (add.east);
+
+        % Final Output State (Y = 10.1)
+        \node[draw=green!60!black, fill=green!55!black, text=white, rounded corners=4pt, 
+              minimum width=5.0cm, minimum height=0.75cm, font=\bfseries\small, 
+              line width=0.9pt] (outx) at (\cx, 10.1) 
+              {$x_{l+1} = x_l + u_l^\perp + \phi(\rho_l) u_l^\parallel$};
+        \draw[->, thick, line width=1.1pt, color=green!60!black] (add.north) -- (outx.south);
+
+        % Dashed Outer Frame for Right Panel (Top at Y = 11.8)
+        \draw[frame] (5.2, 0.55) rectangle (14.2, 11.8);
+        \node[anchor=north west] at (5.45, 11.6) {
+            \begin{tabular}{@{}l@{}}
+                \textbf{\small\color{blue!90!black} Detailed GOR-v2 Residual Block} \\
+                \scriptsize\itshape\color{gray!75!black} Hilbert Space Orthogonal Decomposition ($u_l^\perp$)
+            \end{tabular}
+        };
+
     \end{scope}
 
-    % ==================== GOR-v2 DETAIL (RIGHT) ====================
-    \begin{scope}[xshift=8.5cm]
-        \node[draw=blue!90!black, fill=blue!90!black, text=white, rounded corners=3pt, minimum width=2.4cm, minimum height=0.6cm, font=\bfseries\small] (inx) at (2, 0.2) {Input Stream $x_l$};
-        
-        \coordinate (skipleft) at (0.2, 0.2);
-        \draw[thick, color=blue!90!black] (inx.west) -- (skipleft);
-        \draw[->, thick, color=blue!90!black] (skipleft) -- ++(0, 5.0) node[midway, left, font=\bfseries\scriptsize, rotate=90] {Base Highway $x_l$};
-
-        \node[norm, above right=0.5cm and 0.4cm of inx.north] (rnorm) {RMSNorm($x_l$)};
-        \draw[->, thick] (inx.north) |- (rnorm.west);
-
-        \node[draw=yellow!60!black, fill=yellow!15, rounded corners=3pt, minimum width=3.0cm, minimum height=0.6cm, above=0.5cm of rnorm, font=\bfseries\footnotesize] (core) {Core Block $f_l(\cdot)$ (MHA/FFN)};
-        \draw[->, thick] (rnorm) -- (core);
-
-        % Hilbert Engine
-        \node[draw=green!60!black, fill=green!5, rounded corners=5pt, minimum width=4.8cm, minimum height=2.2cm, above=0.6cm of core, xshift=-0.5cm] (hilbert) {};
-        \draw[->, thick] (core.north) -- (core.north |- hilbert.south) node[midway, right, font=\bfseries\small, color=yellow!50!black] {$u_l$};
-        
-        \node[font=\bfseries\footnotesize, color=green!40!black] at ($(hilbert.north)+(0,-0.3)$) {Hilbert Space Orthogonal Decomposition};
-        \node[font=\scriptsize] at ($(hilbert.center)+( -1.2, 0.2)$) {$\rho_l = \frac{\langle x_l, u_l \rangle}{\|x_l\| \|u_l\|}$};
-        \node[font=\scriptsize] at ($(hilbert.center)+( 1.2, 0.2)$) {$u_l^\parallel = \frac{\langle x_l, u_l \rangle}{\|x_l\|^2} x_l$};
-        \node[font=\scriptsize\bfseries, color=green!50!black] at ($(hilbert.center)+( -1.2, -0.4)$) {$u_l^\perp = u_l - u_l^\parallel$};
-        \node[font=\scriptsize] at ($(hilbert.center)+( 1.2, -0.4)$) {$\phi(\rho_l) = \frac{2}{1 + e^{-3\rho_l}}$};
-
-        \draw[->, dashed, thick, color=blue!90!black] (skipleft |- hilbert.west) -- (hilbert.west);
-
-        % Outputs
-        \node[draw=green!60!black, fill=green!20, circle, inner sep=2pt, font=\bfseries\large, above=0.8cm of hilbert] (add) {$+$};
-
-        \draw[->, thick, color=blue!90!black] (skipleft |- add.west) -- (add.west);
-        \draw[->, thick, color=green!50!black] ($(hilbert.north)+(-1.2, 0)$) -- ++(0, 0.5) node[midway, left, font=\scriptsize\bfseries] {$+1.0 \cdot u_l^\perp$} -| (add.south);
-        \draw[->, thick, color=orange!80!black] ($(hilbert.north)+(1.2, 0)$) -- ++(0, 0.5) node[midway, right, font=\scriptsize\bfseries] {$\phi(\rho) u_l^\parallel$} -| (add.south);
-
-        \node[draw=green!60!black, fill=green!50!black, text=white, rounded corners=3pt, minimum width=4.0cm, minimum height=0.6cm, font=\bfseries\small, above=0.6cm of add] (outx) {$x_{l+1} = x_l + u_l^\perp + \phi(\rho_l) u_l^\parallel$};
-        \draw[->, thick, color=green!60!black] (add) -- (outx);
-
-        \begin{scope}[on background layer]
-            \node[frame, fit=(inx)(hilbert)(outx), inner sep=0.4cm] (boxdetail) {};
-            \node[above right, font=\bfseries, color=blue!80!black] at (boxdetail.north west) {GOR-v2 Orthogonal Residual Block};
-            \node[below right, font=\scriptsize\itshape, color=black!60] at ($(boxdetail.north west)+(0,-0.3)$) {(Replacing Classical Addition $x+u$ with Hilbert Projection)};
-        \end{scope}
-    \end{scope}
-
-    \draw[->, dotted, line width=1.2pt, color=blue!70!black] (moe.east) -- ++(1.4, 0) node[midway, above, font=\scriptsize\itshape] {Expanded View} |- (boxdetail.west);
+    % Connecting Expansion Arrow from Transformer Block (Left) to Right Panel Frame
+    \draw[->, dotted, line width=1.2pt, color=blue!70!black] (2.9, 4.1) -- (5.2, 4.1) 
+        node[midway, above=0.05cm, font=\scriptsize\bfseries\itshape, text=blue!85!black] {Expanded View};
 
 \end{tikzpicture}
 \end{document}
