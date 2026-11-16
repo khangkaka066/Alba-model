@@ -555,6 +555,33 @@
         <strong>4. Functional Multi-Step Reasoning & Code Generalization:</strong> Rigorous evaluation on exact-match Chain-of-Thought (CoT-EM) reasoning and runtime-profiled algorithmic code synthesis.
       </p>
 
+      <h3 class="ieee-subheading">A. Baseline Measurements on Frontier Open-Weight Models</h3>
+      <p>
+        Before evaluating Alba-Model, the framework was run on four open-weight models above 2B parameters (two dense, two MoE) on an NVIDIA A100-80GB in BF16, using a short 8-passage calibration corpus (at most 1024 tokens). Table I and Fig. 3 report the results.
+      </p>
+      <table class="ieee-table">
+        <caption>TABLE I. Baseline diagnostics of frontier models (single A100, BF16)</caption>
+        <thead><tr><th>Model</th><th>Class</th><th>Total (B)</th><th>Active (B)</th><th>Layers</th><th>PPL</th><th>Avg erank/d</th><th>Final BI</th><th>Final &Delta;Loss</th><th>MaxVio (glob / batch)</th><th>Max LSE</th></tr></thead>
+        <tbody>
+<tr><td>Qwen-2.5-7B</td><td>Dense</td><td>7.61</td><td>7.61</td><td>28</td><td>7.79</td><td>0.020</td><td>0.703</td><td>1.063</td><td>&mdash;</td><td>&mdash;</td></tr>
+<tr><td>Qwen-2.5-3B</td><td>Dense</td><td>3.09</td><td>3.09</td><td>36</td><td>9.16</td><td>0.060</td><td>0.548</td><td>0.424</td><td>&mdash;</td><td>&mdash;</td></tr>
+<tr><td>OLMoE-1B-7B</td><td>MoE</td><td>6.92</td><td>1.30</td><td>16</td><td>8.72</td><td>0.072</td><td>0.283</td><td>0.732</td><td>13.03 / 23.99</td><td>5.55</td></tr>
+<tr><td>Qwen1.5-MoE-A2.7B</td><td>MoE</td><td>14.30</td><td>2.70</td><td>24</td><td>9.64</td><td>0.071</td><td>0.545</td><td>1.507</td><td>4.35 / 10.75</td><td>1.12</td></tr>
+        </tbody>
+      </table>
+      <div class="figure-box full-width" style="text-align: center; margin-top: 18px; margin-bottom: 24px;">
+        <img src="figures/frontier_benchmark_grid.png" alt="Frontier model baseline diagnostics" style="max-width: 100%; height: auto; border: 1px solid #cbd5e1; border-radius: 4px;">
+        <div class="figure-caption">
+          <strong>Fig. 3.</strong> Baselines across normalized depth: effective-rank ratio (top-left), Block Influence (top-right), layer-drop sensitivity (bottom-left), and active parameters versus perplexity (bottom-right).
+        </div>
+      </div>
+      <p>
+        <strong>Observations.</strong> (i) All four models have very low average erank/d (0.02&ndash;0.07), so residual-stream representations occupy a small fraction of the available width; Qwen-2.5-7B is the lowest at 0.02. (ii) Final-layer Block Influence is high for every model (0.28&ndash;0.70), so the last block rewrites the representation rather than saturating. (iii) OLMoE-1B-7B reaches PPL 8.72 with 1.3B active parameters, close to Qwen-2.5-3B (9.16, 3.09B active), but its router shows a large peak-to-mean load imbalance (MaxVio 13.0 global, 24.0 batch). Qwen1.5-MoE-A2.7B is more balanced (4.35 / 10.75).
+      </p>
+      <p>
+        <em>Limitations.</em> The corpus is tiny, so erank is bounded by the token count and PPL values are only comparable within this table, not to published benchmarks. MaxVio is computed from the top-2 experts of each router, even though OLMoE routes to 8. Layer-drop sensitivity covers the layers listed in the notebook. Phi-3.5-mini and the gated Llama models are not included yet.
+      </p>
+
       <!-- SECTION VI -->
       <h2 class="ieee-heading">VI. Discussion & Related Work</h2>
       <p>
