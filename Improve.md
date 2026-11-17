@@ -187,7 +187,7 @@ The empirical results of GEO-Muon provide profound theoretical and practical ins
 
 2. **Why Val Loss Rose in Phase 2 Annealing (0.2787 vs. 0.2363):**
    * **Geometric Stiffness & Curriculum Shift:** In curriculum learning, transitioning from Phase 1 (broad knowledge) to Phase 2 (CoT math and logic) creates a distribution shift. AdamW's second-moment accumulator $v_t$ acts as an automatic variance damper. In contrast, Muon's isometric update maintains high geometric stiffness.
-   * **Learning Rate Sensitivity:** At a fixed learning rate of $\eta = 10^{-3}$, this geometric rigidity causes slight overshooting when adapting to a small, specialized dataset. Frontier research (Jordan, 2026; DeepSeek, 2026) confirms that Muon requires a lower learning rate ($\eta pprox 2	ext{--}4 	imes 10^{-4}$) and achieves its peak generalization advantage on massive web-scale corpora (>10B tokens), where its deep manifold capacity prevents underfitting without risk of early overfitting.
+   * **Learning Rate Sensitivity:** At a fixed learning rate of $\eta = 10^{-3}$, this geometric rigidity causes slight overshooting when adapting to a small, specialized dataset. Frontier research (Jordan, 2026; DeepSeek, 2026) confirms that Muon requires a lower learning rate ($\eta \approx 2\text{--}4 \times 10^{-4}$) and achieves its peak generalization advantage on massive web-scale corpora (>10B tokens), where its deep manifold capacity prevents underfitting without risk of early overfitting.
 
 3. **Why Throughput Was 11,932 tok/s:**
    * AdamW executes simple $O(N)$ element-wise scalar updates.
